@@ -1,0 +1,639 @@
+(ns ui.crops
+  (:require-macros [javelin.core :refer :all]
+                   [hoplon.core :refer :all])
+
+  (:require [javelin.core :refer :all]
+            [hoplon.core :refer :all]
+
+            [de.zalf.berest.client.hoplon.util :as util]
+            [de.zalf.berest.client.hoplon.state :as s]
+            [de.zalf.berest.client.hoplon.helper :as h]
+            [ui.elements :as uie]
+            [ui.charts :as charts]
+            [ui.components :as uic]
+            [bootstrap-util :as bsu]
+            [hoplon.twitter.bootstrap :as bs]
+            [cljsjs.highcharts]
+            #_[cljs-time.coerce :as cstcoe]))
+
+
+(defn vocab
+  "translatable vocabulary for this page"
+  [element lang]
+  (get-in {:query-label {:lang/de "Suche"
+                         :lang/en "Search"}
+           :query-placeholder {:lang/de "Achtung LEERE SUCHE!! Alle Fruchtarten anzeigen kann lange dauern!!!"
+                                :lang/en "Attention EMPTY SEARCH!! Showing all crops might take long!!!"}
+
+           :new-crop-filter-value {:lang/de "Neuer Fruchtartname"
+                                   :lang/en "New crop name"}
+
+           :new-crop-button {:lang/de "Neue Fruchtart"
+                             :lang/en "New crop"}
+
+           :copy-crop-button {:lang/de "Fruchtart kopieren"
+                             :lang/en "Copy crop"}
+
+           :name-label {:lang/de "Name"
+                        :lang/en "Name"}
+           :name-placeholder {:lang/de "Name der Fruchtart"
+                              :lang/en "Name of crop"}
+
+           :symbol-label {:lang/de "Symbol"
+                        :lang/en "Symbol"}
+           :symbol-placeholder {:lang/de "Symbol der Fruchtart"
+                              :lang/en "Symbol of crop"}
+
+           :description-label {:lang/de "Beschreibung"
+                          :lang/en "Description"}
+           :description-placeholder {:lang/de "Beschreibung der Fruchtart"
+                                :lang/en "Description of crop"}
+
+           :number-cult-type-usage-label {:lang/de "Nummer/Anbauform/Nutzung"
+                                                :lang/en "Number/Cult.type/Usage"}
+           :number-placeholder {:lang/de "Nummer"
+                                :lang/en "Number"}
+           :cultivation-type-placeholder {:lang/de "Anbauform"
+                                          :lang/en "Cultivation type"}
+           :usage-placeholder {:lang/de "Nutzung"
+                               :lang/en "Usage"}
+
+           :th-user-crop? {:lang/de "Nutzer?"
+                           :lang/en "User?"}
+           :th-crop-number {:lang/de "Nummer"
+                            :lang/en "Number"}
+           :th-crop-cultivation-type {:lang/de "Anbauform"
+                                      :lang/en "Cultivation type"}
+           :th-crop-usage {:lang/de "Verwendungszweck"
+                           :lang/en "Usage"}
+           :th-crop-name {:lang/de "Name"
+                          :lang/en "Name"}
+           :th-crop-symbol {:lang/de "Symbol"
+                            :lang/en "Symbol"}
+
+           :delete-user-crop-button {:lang/de "FA.löschen"
+                                     :lang/en "Delete crop"}
+
+           :show-data {:lang/de "Daten anzeigen"
+                       :lang/en "Show data"}
+           :edit {:lang/de "Ändern"
+                  :lang/en "Edit"}
+           :save-edit {:lang/de "Änderungen speichern"
+                       :lang/en "Save changes"}
+           :chart-header {:lang/de "Wetterdaten"
+                          :lang/en "Weather data"}
+           :chart-subheader {:lang/de "Quelle: DWD Station"
+                             :lang/en "Source: DWD station"}
+
+           :crop-data-fieldset-label {:lang/de "Steuerkurven ändern"
+                                     :lang/en "Change crop curve data"}
+
+           :crop-dc-to-rel-dc-day-label {:lang/de "DC->rel. Tag"
+                                          :lang/en "DC->rel. day"}
+
+           :crop-dc-to-name-label {:lang/de "DC->Name"
+                                   :lang/en "DC->name"}
+
+           :crop-rel-dc-day-to-aet7pet-label {:lang/de "rel.Tag->AET/PET"
+                                              :lang/en "rel.day->AET/PET"}
+
+           :crop-rel-dc-day-to-cover-degree-label {:lang/de "rel.Tag->Bedeckungsgrad"
+                                              :lang/en "rel.day->cover degree"}
+
+           :crop-rel-dc-day-to-extraction-depth-label {:lang/de "rel.Tag->Entzugstiefe"
+                                                       :lang/en "rel.day->extraction depth"}
+
+           :crop-rel-dc-day-to-transpiration-factor-label {:lang/de "rel.Tag->Transpirationsfaktor"
+                                                           :lang/en "rel.day->transpiration factor"}
+
+           :crop-effectivity-quotient-label {:lang/de "Effektivitätsquotient"
+                                             :lang/en "Effectivity quotient"}
+           :crop-effectivity-quotient-placeholder {:lang/de "Effektivitätsquotient"
+                                                   :lang/en "Effectivity quotient"}
+
+           :dc {:lang/de "BEREST DC Code"
+                :lang/en "BEREST DC code"}
+
+           :cover-degree {:lang/de "Bedeckungsgrad"
+                          :lang/en "Cover degree"}
+
+           :extraction-depth {:lang/de "Entzugstiefe"
+                              :lang/en "Extraction depth"}
+
+           :aet-pet {:lang/de "Quotient AET/PET"
+                     :lang/en "Quotient AET/PET"}
+
+           :transpiration-factor {:lang/de "Transpirations-Faktor"
+                                  :lang/en "Transpiration factor"}
+           }
+          [element (or lang :lang/de)] "UNKNOWN element"))
+
+(defn crops-pane
+  []
+  (let [filter-criterium (cell "A")
+        fc-count (cell= (count filter-criterium))
+        lc-filter-criterium (cell= (.toLowerCase filter-criterium))
+        fc-first-char (cell= (.charAt lc-filter-criterium 0))
+        filtered-crops (cell= (if (> fc-count 0)
+                                (filter (fn [{name :crop/name}]
+                                          ;include crops in resultset, whose name is missing
+                                          (if name
+                                            (let [lc-name (.toLowerCase name)]
+                                              (if (> fc-count 1)
+                                                (> (.search lc-name (h/quote-regex lc-filter-criterium)) -1)
+                                                (= (.charAt lc-name 0) fc-first-char)))
+                                            true))
+                                        s/minimal-all-crops)
+                                s/minimal-all-crops))
+
+        #_selected-crop #_(cell nil)
+        selected-crop (cell= (when-let [cid (:crop-id s/route-params)]
+                               (first (filter #(= (:crop/id %) cid) s/minimal-all-crops))))
+        ;_ (cell= (println "selected-crop: " (pr-str selected-crop)))
+
+        _ (cell= (if selected-crop
+                   (s/set-breadcrumb :crop (str (:crop/number selected-crop) "/"
+                                                (:crop/cultivation-type selected-crop) "/"
+                                                (:crop/usage selected-crop) " | "
+                                                (:crop/symbol selected-crop) " | "
+                                                (:crop/name selected-crop)))
+                   (s/set-breadcrumb :crop nil)))
+
+        _ (cell= (when filtered-crops
+                   (s/set-route-params :crop-id nil)))
+
+        _ (cell= (let [id (:crop/id selected-crop)]
+                   (when (and id (not= id (:crop/id s/processed-crop-data)))
+                     (s/load-crop-data id))))
+
+        new-crop-no (cell 0)
+
+        [#_chart-id] (repeatedly gensym)
+
+        ]
+
+    (div
+      :id "crops-pane"
+      :toggle (cell= (and s/show-content? (= s/route "#/crops")))
+
+      (bs/form-horizontal
+
+        (bs/form-group
+          (div
+            :class "col-xs-offset-1 form-control-static"
+            :col {:xs 11}
+            (for [c (range 65 91)]
+              (button
+                :type "button"
+                :class "btn btn-link"
+                :click #(reset! filter-criterium (char c))
+                (char c)))))
+
+        (bs/form-group
+          (bs/control-label :col {:xs 1} :for "crop-query-input-id" (text "~(vocab :query-label s/lang)"))
+          (div
+            :col {:xs 11}
+            (input
+              :id "crop-query-input-id"
+              :class "form-control"
+              :type "text"
+              :placeholder (cell= (vocab :query-placeholder s/lang))
+              :value filter-criterium
+              :change #(reset! filter-criterium @%)))))
+
+      (div
+        :class "row"
+
+        (div
+          :col {:xs 12}
+
+          (table
+            :class "table"
+
+            (thead
+              (tr
+                (th :style "width:5%" "" #_(text "~(vocab :th-weather-jump s/lang)"))
+                (th :style "width:7%" (text "~(vocab :th-crop-number s/lang)"))
+                (th :style "width:7%" (text "~(vocab :th-crop-cultivation-type s/lang)"))
+                (th :style "width:16%" (text "~(vocab :th-crop-usage s/lang)"))
+                (th :style "width:28%" (text "~(vocab :th-crop-name s/lang)"))
+                (th :style "width:13%" (text "~(vocab :th-crop-symbol s/lang)"))
+                (th :style "width:5%" (text "~(vocab :th-user-crop? s/lang)"))
+                (th :style "width:10%; text-align:right" "")
+                (th
+                  :style "width:10%; text-align:right"
+                  (button
+                    :class "btn btn-warning btn-sm btn-block"
+                    :click #(let [temp-crop-name (str (vocab :new-crop-filter-value @s/lang) " "
+                                                      (swap! new-crop-no inc))]
+                             (s/create-new-crop temp-crop-name)
+                             (reset! filter-criterium temp-crop-name))
+                    (text "~(vocab :new-crop-button s/lang)")))))
+
+            (tbody
+              (loop-tpl
+                :bindings [{db-id :db/id
+                            id :crop/id
+                            crop-type :crop-type
+                            name :crop/name
+                            symbol :crop/symbol
+                            number :crop/number
+                            cultivation-type :crop/cultivation-type
+                            usage :crop/usage
+                            :as crop}
+                           (cell= (sort-by :crop/name filtered-crops))]
+                (let [hover? (cell false)
+                      selected? (cell= (= id (:crop/id selected-crop)))]
+                  (tr
+                    :mouseenter #(reset! hover? true)
+                    :mouseleave #(reset! hover? false)
+                    (td
+                      :style "text-align: center; vertical-align: middle"
+                      :class (cell= {:warning (and hover? (not selected?))
+                                     :success selected?})
+                      :click #(do
+                               (some-> "crop-chart" #_chart-id util/by-id .scrollIntoView)
+                               (s/set-route-params :weather-station-id @id))
+                      (span :class "glyphicon glyphicon-arrow-down"))
+                    (td
+                      :style "vertical-align: middle"
+                      :class (cell= {:warning (and hover? (not selected?))
+                                     :success selected?})
+                      :click #(s/set-route-params :crop-id @id)
+                      (text "~{number}"))
+                    (td
+                      :style "vertical-align: middle"
+                      :class (cell= {:warning (and hover? (not selected?))
+                                     :success selected?})
+                      :click #(s/set-route-params :crop-id @id)
+                      (text "~{cultivation-type}"))
+                    (td
+                      :style "vertical-align: middle"
+                      :class (cell= {:warning (and hover? (not selected?))
+                                     :success selected?})
+                      :click #(s/set-route-params :crop-id @id)
+                      (text "~{usage}"))
+                    (td
+                      :style "vertical-align: middle"
+                      :class (cell= {:warning (and hover? (not selected?))
+                                     :success selected?})
+                      :click #(s/set-route-params :crop-id @id)
+                      (text "~{name}"))
+                    (td
+                      :style "vertical-align: middle"
+                      :class (cell= {:warning (and hover? (not selected?))
+                                     :success selected?})
+                      :click #(s/set-route-params :crop-id @id)
+                      (text "~{symbol}"))
+                    (td
+                      :style "text-align: center; vertical-align: middle"
+                      :class (cell= {:warning (and hover? (not selected?))
+                                     :success selected?})
+                      :click #(s/set-route-params :crop-id @id)
+                      (span :class (cell= {:glyphicon (= crop-type :user)
+                                           :glyphicon-ok (= crop-type :user)})))
+                    (td
+                      :style "text-align:right; vertical-align: middle"
+                      (uic/safe-delete-button
+                        :toggle (cell= (or (= crop-type :user) s/admin-logged-in?))
+                        :small-button? true
+                        :action! #(s/delete-crop @db-id)
+                        :value (cell= (vocab :delete-user-crop-button s/lang))))
+                    (td
+                      :style "text-align:right; vertical-align: middle"
+                      (button
+                        :class "btn btn-warning btn-sm btn-block"
+                        :click #(let [temp-crop-name (str @name " (Kopie)")]
+                                 (s/copy-crop @id temp-crop-name)
+                                 (reset! filter-criterium temp-crop-name))
+                        (text "~(vocab :copy-crop-button s/lang)"))))))))))
+
+      (bs/form-horizontal
+        :toggle (cell= (not (nil? selected-crop)))
+        :name "crops-form"
+
+        (cell-let [{db-id :db/id
+                    id :crop/id
+                    name :crop/name
+                    description :crop/description
+                    symbol :crop/symbol
+                    number :crop/number
+                    cultivation-type :crop/cultivation-type
+                    effectivity-quotient :crop/effectivity-quotient
+                    usage :crop/usage} s/raw-crop-data]
+
+          (let [[name-id description-id symbol-id
+                 number-id cultivation-type-id usage-id
+                 crop-effectivity-quotient-id] (repeatedly gensym)
+
+                _ (with-timeout 0 (js/Highcharts.Chart. (clj->js (charts/crop-curves-chart-config "crop-chart" #_chart-id))))
+                _ (cell= (charts/set-crop-curve-data "crop-chart" #_chart-id s/processed-crop-data))
+
+                user-crop? (= (:crop-type s/crop-state) :user)
+                edit? (cell= (or user-crop? s/admin-logged-in?))
+                no-edit? (cell= (not edit?))
+                ]
+
+            (div
+
+              (bs/form-group
+                (bs/control-label :col {:sm 2} :for name-id (text "~(vocab :name-label s/lang)"))
+                (div
+                  :col {:xs 3}
+                  (p :toggle no-edit? :class "form-control-static" (text "~{name}"))
+                  (input
+                    :id name-id
+                    :toggle edit?
+                    :class "form-control"
+                    :type "text"
+                    :placeholder (cell= (vocab :name-placeholder s/lang))
+                    :value name
+                    :change #(s/update-crop-db-entity @id @db-id :crop/name @%))))
+
+              (bs/form-group
+                (bs/control-label :col {:sm 2} :for symbol-id (text "~(vocab :symbol-label s/lang)"))
+                (div
+                  :col {:xs 3}
+                  (p :toggle no-edit? :class "form-control-static" (text "~{symbol}"))
+                  (input
+                    :id symbol-id
+                    :toggle edit?
+                    :class "form-control"
+                    :type "text"
+                    :placeholder (cell= (vocab :symbol-placeholder s/lang))
+                    :value symbol
+                    :change #(s/update-crop-db-entity @id @db-id :crop/symbol @%))))
+
+              (bs/form-group
+                (bs/control-label :col {:sm 2} :for description-id (text "~(vocab :description-label s/lang)"))
+                (div
+                  :col {:xs 6}
+                  (p :toggle no-edit? :class "form-control-static" (text "~{description}"))
+                  (input
+                    :id description-id
+                    :toggle edit?
+                    :class "form-control"
+                    :type "text"
+                    :placeholder (cell= (vocab :description-placeholder s/lang))
+                    :value description
+                    :change #(s/update-crop-db-entity @id @db-id :crop/description @%))))
+
+              (bs/form-group
+                (bs/control-label :col {:sm 2} :for description-id (text "~(vocab :number-cult-type-usage-label s/lang)"))
+                (div
+                  :col {:xs 2}
+                  (p :toggle no-edit? :class "form-control-static" (text "~{number}"))
+                  (input
+                    :id number-id
+                    :toggle edit?
+                    :class "form-control"
+                    :type "text"
+                    :placeholder (cell= (vocab :number-placeholder s/lang))
+                    :value number
+                    :change #(s/update-crop-db-entity @id @db-id :crop/number @%)))
+                (div
+                  :col {:xs 2}
+                  (p :toggle no-edit? :class "form-control-static" (text "~{cultivation-type}"))
+                  (input
+                    :id cultivation-type-id
+                    :toggle edit?
+                    :class "form-control"
+                    :type "text"
+                    :placeholder (cell= (vocab :cultivation-type-placeholder s/lang))
+                    :value cultivation-type
+                    :change #(s/update-crop-db-entity @id @db-id :crop/cultivation-type @%)))
+                (div
+                  :col {:xs 2}
+                  (p :toggle no-edit? :class "form-control-static" (text "~{usage}"))
+                  (input
+                    :id usage-id
+                    :toggle edit?
+                    :class "form-control"
+                    :type "text"
+                    :placeholder (cell= (vocab :usage-placeholder s/lang))
+                    :value usage
+                    :change #(s/update-crop-db-entity @id @db-id :crop/usage @%))))
+
+              (div
+                :class "row"
+
+                (div
+                  :id "crop-chart" #_chart-id
+                  :col {:xs 12}))
+
+              (let [visible? (cell false)]
+                (fieldset
+                  :toggle edit?
+
+                  (uic/hover-activate-wrapper
+                    :action! #(swap! visible? not)
+                    (legend
+                      (text "~(vocab :crop-data-fieldset-label s/lang) ~(when-not visible? \" ...\")")))
+
+                  (bs/form-group
+                    :toggle visible?
+                    (bs/control-label :col {:sm 3} (text "~(vocab :crop-dc-to-rel-dc-day-label s/lang)"))
+                    (let [dc* (cell nil)
+                          rel-dc-day* (cell nil)]
+                      (div
+                        :col {:xs 9}
+
+                        (loop-tpl
+                          :bindings [[row-no {db-id :db/id
+                                              dc :kv/dc
+                                              rel-dc-day :kv/rel-dc-day}]
+                                     (cell= (util/indexed (sort-by :kv/dc (:crop/dc-to-rel-dc-days s/raw-crop-data))))]
+                          (uie/create-crop-dc-to-rel-dc-day-inputs
+                            :fields {:row-no row-no
+                                     :row-action! #(s/delete-crop-db-entity @id @db-id)
+                                     :dc dc :dc! #(s/update-crop-db-entity @id @db-id :kv/dc %)
+                                     :rel-dc-day rel-dc-day :rel-dc-day! #(s/update-crop-db-entity @id @db-id :kv/rel-dc-day %)}))
+                        (uie/create-crop-dc-to-rel-dc-day-inputs
+                          :fields {:row-action! #(when (and @dc* @rel-dc-day*)
+                                                   (s/create-new-crop-kv-pair @id :crop/dc-to-rel-dc-days
+                                                                              :kv/dc @dc*
+                                                                              :kv/rel-dc-day @rel-dc-day*)
+                                                   (reset! dc* nil)
+                                                   (reset! rel-dc-day* nil))
+                                   :dc dc* :dc! #(reset! dc* %)
+                                   :rel-dc-day rel-dc-day* :rel-dc-day! #(reset! rel-dc-day* %)}))))
+
+                  (bs/form-group
+                    :toggle visible?
+                    (bs/control-label :col {:sm 3} (text "~(vocab :crop-dc-to-name-label s/lang)"))
+                    (let [dc* (cell nil)
+                          name* (cell nil)]
+                      (div
+                        :col {:xs 9}
+
+                        (loop-tpl
+                          :bindings [[row-no {db-id :db/id
+                                              dc :kv/dc
+                                              name :kv/name}]
+                                     (cell= (util/indexed (sort-by :kv/name (:crop/dc-to-developmental-state-names s/raw-crop-data))))]
+                          (uie/create-crop-dc-to-dev-state-name-inputs
+                            :fields {:row-no row-no
+                                     :row-action! #(s/delete-crop-db-entity @id @db-id)
+                                     :dc dc :dc! #(s/update-crop-db-entity @id @db-id :kv/dc %)
+                                     :name name :name! #(s/update-crop-db-entity @id @db-id :kv/name %)}))
+                        (uie/create-crop-dc-to-dev-state-name-inputs
+                          :fields {:row-action! #(when (and @dc* @name*)
+                                                  (s/create-new-crop-kv-pair @id :crop/dc-to-developmental-state-names
+                                                                             :kv/dc @dc*
+                                                                             :kv/name @name*)
+                                                  (reset! dc* nil)
+                                                  (reset! name* nil))
+                                   :dc dc* :dc! #(reset! dc* %)
+                                   :name name* :name! #(reset! name* %)}))))
+
+                  (bs/form-group
+                    :toggle visible?
+                    (bs/control-label :col {:sm 3} (text "~(vocab :crop-rel-dc-day-to-aet7pet-label s/lang)"))
+                    (let [rel-dc-day* (cell nil)
+                          aet7pet* (cell nil)]
+                      (div
+                        :col {:xs 9}
+
+                        (loop-tpl
+                          :bindings [[row-no {db-id :db/id
+                                              aet7pet :kv/quotient-aet-pet
+                                              rel-dc-day :kv/rel-dc-day}]
+                                     (cell= (util/indexed (sort-by :kv/rel-dc-day (:crop/rel-dc-day-to-quotient-aet-pets s/raw-crop-data))))]
+                          (uie/create-crop-rel-dc-day-to-aet7pet-inputs
+                            :fields {:row-no row-no
+                                     :row-action! #(s/delete-crop-db-entity @id @db-id)
+                                     :rel-dc-day rel-dc-day :rel-dc-day! #(s/update-crop-db-entity @id @db-id :kv/rel-dc-day %)
+                                     :aet7pet (cell= (* aet7pet 100))
+                                     :aet7pet! #(s/update-crop-db-entity @id @db-id
+                                                                         :kv/quotient-aet-pet (/ (double %) 100.)
+                                                                         :value-type :double)}))
+                        (uie/create-crop-rel-dc-day-to-aet7pet-inputs
+                          :fields {:row-action! #(when (and @rel-dc-day* @aet7pet*)
+                                                  (s/create-new-crop-kv-pair @id :crop/rel-dc-day-to-quotient-aet-pets
+                                                                             :kv/rel-dc-day @rel-dc-day*
+                                                                             :kv/quotient-aet-pet (/ (double @aet7pet*) 100.)
+                                                                             :value-type :double)
+                                                  (reset! rel-dc-day* nil)
+                                                  (reset! aet7pet* nil))
+                                   :rel-dc-day rel-dc-day* :rel-dc-day! #(reset! rel-dc-day* %)
+                                   :aet7pet aet7pet* :aet7pet! #(reset! aet7pet* %)}))))
+
+                  (bs/form-group
+                    :toggle visible?
+                    (bs/control-label :col {:sm 3} (text "~(vocab :crop-rel-dc-day-to-cover-degree-label s/lang)"))
+                    (let [rel-dc-day* (cell nil)
+                          cover-degree* (cell nil)]
+                      (div
+                        :col {:xs 9}
+
+                        (loop-tpl
+                          :bindings [[row-no {db-id :db/id
+                                              cover-degree :kv/cover-degree
+                                              rel-dc-day :kv/rel-dc-day}]
+                                     (cell= (util/indexed (sort-by :kv/rel-dc-day (:crop/rel-dc-day-to-cover-degrees s/raw-crop-data))))]
+                          (uie/create-crop-rel-dc-day-to-cover-degree-inputs
+                            :fields {:row-no row-no
+                                     :row-action! #(s/delete-crop-db-entity @id @db-id)
+                                     :rel-dc-day rel-dc-day :rel-dc-day! #(s/update-crop-db-entity @id @db-id :kv/rel-dc-day %)
+                                     :cover-degree (cell= (* cover-degree 100))
+                                     :cover-degree! #(s/update-crop-db-entity @id @db-id
+                                                                              :kv/cover-degree (/ (double %) 100.)
+                                                                              :value-type :double)}))
+                        (uie/create-crop-rel-dc-day-to-cover-degree-inputs
+                          :fields {:row-action! #(when (and @rel-dc-day* @cover-degree*)
+                                                  (s/create-new-crop-kv-pair @id :crop/rel-dc-day-to-cover-degrees
+                                                                             :kv/rel-dc-day @rel-dc-day*
+                                                                             :kv/cover-degree (/ (double @cover-degree*) 100.)
+                                                                             :value-type :double)
+                                                  (reset! rel-dc-day* nil)
+                                                  (reset! cover-degree* nil))
+                                   :rel-dc-day rel-dc-day* :rel-dc-day! #(reset! rel-dc-day* %)
+                                   :cover-degree cover-degree* :cover-degree! #(reset! cover-degree* %)}))))
+
+                  (bs/form-group
+                    :toggle visible?
+                    (bs/control-label :col {:sm 3} (text "~(vocab :crop-rel-dc-day-to-extraction-depth-label s/lang)"))
+                    (let [rel-dc-day* (cell nil)
+                          extraction-depth* (cell nil)]
+                      (div
+                        :col {:xs 9}
+
+                        (loop-tpl
+                          :bindings [[row-no {db-id :db/id
+                                              extraction-depth :kv/extraction-depth
+                                              rel-dc-day :kv/rel-dc-day}]
+                                     (cell= (util/indexed (sort-by :kv/rel-dc-day (:crop/rel-dc-day-to-extraction-depths s/raw-crop-data))))]
+                          (uie/create-crop-rel-dc-day-to-extraction-depth-inputs
+                            :fields {:row-no row-no
+                                     :row-action! #(s/delete-crop-db-entity @id @db-id)
+                                     :rel-dc-day rel-dc-day :rel-dc-day! #(s/update-crop-db-entity @id @db-id :kv/rel-dc-day %)
+                                     :extraction-depth extraction-depth
+                                     :extraction-depth! #(s/update-crop-db-entity @id @db-id
+                                                                                  :kv/extraction-depth %
+                                                                                  :value-type :int)}))
+                        (uie/create-crop-rel-dc-day-to-extraction-depth-inputs
+                          :fields {:row-action! #(when (and @rel-dc-day* @extraction-depth*)
+                                                  (s/create-new-crop-kv-pair @id :crop/rel-dc-day-to-extraction-depths
+                                                                             :kv/rel-dc-day @rel-dc-day*
+                                                                             :kv/extraction-depth @extraction-depth*
+                                                                             :value-type :int)
+                                                  (reset! rel-dc-day* nil)
+                                                  (reset! extraction-depth* nil))
+                                   :rel-dc-day rel-dc-day* :rel-dc-day! #(reset! rel-dc-day* %)
+                                   :extraction-depth extraction-depth* :extraction-depth! #(reset! extraction-depth* %)}))))
+
+                  (bs/form-group
+                    :toggle visible?
+                    (bs/control-label :col {:sm 3} (text "~(vocab :crop-rel-dc-day-to-transpiration-factor-label s/lang)"))
+                    (let [rel-dc-day* (cell nil)
+                          transpiration-factor* (cell nil)]
+                      (div
+                        :col {:xs 9}
+
+                        (loop-tpl
+                          :bindings [[row-no {db-id :db/id
+                                              transpiration-factor :kv/transpiration-factor
+                                              rel-dc-day :kv/rel-dc-day}]
+                                     (cell= (util/indexed (sort-by :kv/rel-dc-day (:crop/rel-dc-day-to-transpiration-factors s/raw-crop-data))))]
+                          (uie/create-crop-rel-dc-day-to-transpiration-factor-inputs
+                            :fields {:row-no row-no
+                                     :row-action! #(s/delete-crop-db-entity @id @db-id)
+                                     :rel-dc-day rel-dc-day :rel-dc-day! #(s/update-crop-db-entity @id @db-id :kv/rel-dc-day %)
+                                     :transpiration-factor transpiration-factor
+                                     :transpiration-factor! #(s/update-crop-db-entity @id @db-id
+                                                                                      :kv/transpiration-factor %
+                                                                                      :value-type :double)}))
+                        (uie/create-crop-rel-dc-day-to-transpiration-factor-inputs
+                          :fields {:row-action! #(when (and @rel-dc-day* @transpiration-factor*)
+                                                  (s/create-new-crop-kv-pair @id :crop/rel-dc-day-to-transpiration-factors
+                                                                             :kv/rel-dc-day @rel-dc-day*
+                                                                             :kv/transpiration-factor @transpiration-factor*
+                                                                             :value-type :double)
+                                                  (reset! rel-dc-day* nil)
+                                                  (reset! transpiration-factor* nil))
+                                   :rel-dc-day rel-dc-day* :rel-dc-day! #(reset! rel-dc-day* %)
+                                   :transpiration-factor transpiration-factor*
+                                   :transpiration-factor! #(reset! transpiration-factor* %)}))))
+
+                  (bs/form-group
+                    :toggle visible?
+                    (bs/control-label :col {:sm 3} :for crop-effectivity-quotient-id (text "~(vocab :crop-effectivity-quotient-label s/lang)"))
+                    (div
+                      :col {:xs 2}
+                      #_(p :toggle no-edit? :class "form-control-static" (text "~{effectivity-quotient}"))
+                      (div
+                        :class "input-group"
+                        (input
+                          :id crop-effectivity-quotient-id
+                          ;:toggle edit?
+                          :class "form-control"
+                          :type "number"
+                          :step 0.1
+                          :min 0
+                          :max 2
+                          :placeholder (cell= (vocab :crop-effectivity-quotient-placeholder s/lang))
+                          :value effectivity-quotient
+                          :change #(s/update-crop-db-entity @id @db-id
+                                                               :crop/effectivity-quotient (js/parseFloat @%)
+                                                               :value-type :double))
+                        (span :class "input-group-addon" "")))))))))))))

@@ -1,0 +1,19 @@
+(ns bootstrap-util
+  #_(:refer-hoplon :exclude [form input])
+  (:require [clojure.string :as str]
+            #_[hoplon.twitter.bootstrap :as bs]))
+
+(defn opts-classes
+  [prefix opts]
+  (->> opts (map #(str prefix "-" (name %)))))
+
+(defelem
+  form-inline
+  [attr kids]
+  ((form :role "form" :class "form-inline") attr kids))
+
+(defelem
+  navbar
+  [{:keys [opts] :as attr} kids]
+  (let [classes (->> opts (opts-classes "navbar") (cons "navbar") (str/join " "))]
+    ((div :class classes :role "navigation") (dissoc attr :opts) kids)))

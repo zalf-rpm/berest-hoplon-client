@@ -1,0 +1,196 @@
+(ns ui.charts
+  (:require-macros [javelin.core :refer :all]
+                   [hoplon.core :refer :all])
+
+  (:require [javelin.core :refer :all]
+            [hoplon.core :refer :all]
+
+            [de.zalf.berest.client.hoplon.util :as util]
+            [de.zalf.berest.client.hoplon.state :as s]
+            [ui.elements :as uie]
+            [ui.components :as uic]
+            [bootstrap-util :as bsu]
+            [hoplon.twitter.bootstrap :as bs]
+            [cljsjs.highcharts]
+            #_[cljs-time.coerce :as cstcoe]))
+
+(defn vocab
+  "translatable vocabulary for this page"
+  [element lang]
+  (get-in {:query-label {:lang/de "Suche"
+                         :lang/en "Search"}
+           :query-placeholder {:lang/de "Achtung LEERE SUCHE!! Alle Fruchtarten anzeigen kann lange dauern!!!"
+                               :lang/en "Attention EMPTY SEARCH!! Showing all crops might take long!!!"}
+
+           :name-label {:lang/de "Name"
+                        :lang/en "Name"}
+           :name-placeholder {:lang/de "Name der Fruchtart"
+                              :lang/en "Name of crop"}
+
+           :symbol-label {:lang/de "Symbol"
+                          :lang/en "Symbol"}
+           :symbol-placeholder {:lang/de "Symbol der Fruchtart"
+                                :lang/en "Symbol of crop"}
+
+           :th-crop-number {:lang/de "Nummer"
+                            :lang/en "Number"}
+           :th-crop-cultivation-type {:lang/de "Anbauform"
+                                      :lang/en "Cultivation type"}
+           :th-crop-usage {:lang/de "Verwendungszweck"
+                           :lang/en "Usage"}
+           :th-crop-name {:lang/de "Name"
+                          :lang/en "Name"}
+           :th-crop-symbol {:lang/de "Symbol"
+                            :lang/en "Symbol"}
+
+           :show-data {:lang/de "Daten anzeigen"
+                       :lang/en "Show data"}
+           :edit {:lang/de "Ändern"
+                  :lang/en "Edit"}
+           :save-edit {:lang/de "Änderungen speichern"
+                       :lang/en "Save changes"}
+           :chart-header {:lang/de "Wetterdaten"
+                          :lang/en "Weather data"}
+           :chart-subheader {:lang/de "Quelle: DWD Station"
+                             :lang/en "Source: DWD station"}
+
+           :crop-data-fieldset-label {:lang/de "Steuerkurven ändern"
+                                      :lang/en "Change crop curve data"}
+
+           :crop-dc-to-rel-dc-day-label {:lang/de "DC->rel. Tag"
+                                         :lang/en "DC->rel. day"}
+
+           :crop-dc-to-name-label {:lang/de "DC->Name"
+                                   :lang/en "DC->name"}
+
+           :crop-rel-dc-day-to-aet7pet-label {:lang/de "rel.Tag->AET/PET"
+                                              :lang/en "rel.day->AET/PET"}
+
+           :crop-rel-dc-day-to-cover-degree-label {:lang/de "rel.Tag->Bedeckungsgrad"
+                                                   :lang/en "rel.day->cover degree"}
+
+           :crop-rel-dc-day-to-extraction-depth-label {:lang/de "rel.Tag->Entzugstiefe"
+                                                       :lang/en "rel.day->extraction depth"}
+
+           :crop-rel-dc-day-to-transpiration-factor-label {:lang/de "rel.Tag->Transpirationsfaktor"
+                                                           :lang/en "rel.day->transpiration factor"}
+
+           :dc {:lang/de "DC Code"
+                :lang/en "DC code"}
+
+           :cover-degree {:lang/de "Bedeckungsgrad"
+                          :lang/en "Cover degree"}
+
+           :extraction-depth {:lang/de "Entzugstiefe"
+                              :lang/en "Extraction depth"}
+
+           :aet-pet {:lang/de "Quotient AET/PET"
+                     :lang/en "Quotient AET/PET"}
+
+           :transpiration-factor {:lang/de "Transpirations-Faktor"
+                                  :lang/en "Transpiration factor"}
+           }
+          [element (or lang :lang/de)] "UNKNOWN element"))
+
+(defn apply-fn-to-series
+  [chart-div-id series-index f]
+  (some-> chart-div-id
+          util/by-id
+          js/jQuery
+          .highcharts
+          .-series
+          (#(nth % series-index) ,,,)
+          f))
+
+(defn set-series-data
+  [chart-div-id series-index data]
+  (apply-fn-to-series chart-div-id series-index #(.setData % (clj->js data))))
+
+
+(defn crop-curves-chart-config
+  [render-to-div-id]
+  {:chart {:renderTo render-to-div-id
+           :defaultSeriesType "line"
+           :zoomType "x"
+           #_:spacingTop #_50}
+   :title {:text "" #_(vocab :chart-header @s/lang)
+           :x 0 #_-20}
+   :xAxis {:title {:text "relative DC Tage"}
+           ;:type "datetime"
+           #_:labels #_{:format "{value: %d.%m.%Y}"
+                                             :rotation 45
+                                             :align "left"}}
+   :yAxis [{:title {:text (str "<b>" (vocab :dc @s/lang) " []</b>")}}
+           {:title {:text (str "<b>" (vocab :cover-degree @s/lang) " [%]</b>")}}
+           {:title {:text (str "<b>" (vocab :extraction-depth @s/lang) " [cm]</b>")}}
+           {:title {:text (str "<b>" (vocab :aet-pet @s/lang) " [°C]</b>")}
+            :opposite true}
+           {:title {:text (str "<b>" (vocab :transpiration-factor @s/lang) " []</b>")}
+            :opposite true}]
+   :tooltip {:shared true
+             :crosshairs true}
+   :legend {:layout "horizontal" #_"vertical"
+            :align "center" #_"right"
+            :verticalAlign "top" #_"middle"
+            :borderWidth 0}
+   :series [{:name (vocab :dc @s/lang)
+             :yAxis 0
+             ;:tooltip {:valueSuffix " "}
+             :color "#CCCC00"
+             :data []}
+            {:name (vocab :cover-degree @s/lang)
+             :yAxis 1
+             :tooltip {:valueSuffix " %"}
+             :color "#339966"
+             :data []}
+            {:name (vocab :extraction-depth @s/lang)
+             :yAxis 2
+             :tooltip {:valueSuffix " cm"}
+             :color "#FF0000"
+             :data []}
+            {:name (vocab :aet-pet @s/lang)
+             :yAxis 3
+             ;:tooltip {:valueSuffix " mm"}
+             :color "#00FF00"
+             :data []}
+            {:name (vocab :transpiration-factor @s/lang)
+             :yAxis 4
+             ;:tooltip {:valueSuffix " "}
+             :color "#CC0066"
+             :data []}]})
+
+(defn set-crop-curve-data
+  [chart-div-id crop-data]
+  (let [dc (cell= (->> (:crop/dc-to-rel-dc-days crop-data)
+                       (mapv (fn [[k v]] {:name (str v " <b>" (get (:crop/dc-to-developmental-state-names crop-data) k) "</b>")
+                                          :x v :y k})
+                             ,,,)
+                       (sort-by :x ,,,)))
+        _ (cell= (set-series-data chart-div-id 0 dc))
+
+        cover-degrees (cell= (->> (:crop/rel-dc-day-to-cover-degrees crop-data)
+                                  (map (fn [[rel-dc-day cd]]
+                                         [rel-dc-day (* cd 100)])
+                                       ,,,)
+                                  (into [] ,,,)
+                                  (sort-by first ,,,)))
+        _ (cell= (set-series-data chart-div-id 1 cover-degrees))
+
+        extraction-depths (cell= (->> (:crop/rel-dc-day-to-extraction-depths crop-data)
+                                      #_(map (fn [[rel-dc-day depth-dm]]
+                                             [rel-dc-day (* depth-dm 10)])
+                                           ,,,)
+                                      (into [] ,,,)
+                                      (sort-by first ,,,)))
+        _ (cell= (set-series-data chart-div-id 2 extraction-depths))
+
+        aet-pet (cell= (->> (:crop/rel-dc-day-to-quotient-aet-pets crop-data)
+                            (into [],,,)
+                            (sort-by first,,,)))
+        _ (cell= (set-series-data chart-div-id 3 aet-pet))
+
+        transpiration-factors (cell= (->> (:crop/rel-dc-day-to-transpiration-factors crop-data)
+                                          (into [],,,)
+                                          (sort-by first,,,)))
+        _ (cell= (set-series-data chart-div-id 4 transpiration-factors))]))
+

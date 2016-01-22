@@ -1,0 +1,359 @@
+(ns ui.farm
+  (:require [de.zalf.berest.client.hoplon.util :as util]
+            [de.zalf.berest.client.hoplon.state :as s]
+            [ui.elements :as uie]
+            [ui.components :as uic]
+            [ui.addresses :as addr]
+            [ui.contacts :as contacts]
+            [bootstrap-util :as bsu]
+            [hoplon.twitter.bootstrap :as bs]))
+
+(defn vocab
+  "translatable vocabulary for this page"
+  [element lang]
+  (get-in {:name-label {:lang/de "Name"
+                        :lang/en "Name"}
+           :name-placeholder {:lang/de "Name des Betriebes"
+                              :lang/en "Name of farm"}
+
+           :address-fieldset-label {:lang/de "Adressdaten"
+                                    :lang/en "Address data"}
+           :new-address-button-label {:lang/de "Neue Adresse"
+                                      :lang/en "New address"}
+           :delete-address-button-label {:lang/de "A. löschen!"
+                                         :lang/en "Delete address!"}
+
+           :contacts-fieldset-label {:lang/de "Kontaktdaten"
+                                    :lang/en "Contact data"}
+           :new-contact-button-label {:lang/de "Neuer Kontakt"
+                                      :lang/en "New contact"}
+           :delete-contact-button-label {:lang/de "K. löschen!"
+                                         :lang/en "Delete contact!"}
+
+
+           :weather-stations-fieldset-label {:lang/de "Wetterstationen"
+                                             :lang/en "Weather stations"}
+
+           :weather-data-fieldset-label {:lang/de "Wetterdaten (Betriebs-Ebene)"
+                                         :lang/en "Weather data (Farm level)"}
+
+           :authorative-weather-station-label {:lang/de "Haupt-Wetterstation"
+                                         :lang/en "Main weather station"}
+
+           :weather-station-label {:lang/de "lokale Wetterstation"
+                                   :lang/en "Local weather station"}
+
+           :weather-data-label {:lang/de "Manuelle Wetterdaten"
+                                :lang/en "Manual weather data"}
+
+           :notes-label {:lang/de "Notizen"
+                         :lang/en "Notes"}
+           :notes-placeholder {:lang/de "Hier können Notizen zum Betrieb gemacht werden ..."
+                               :lang/en "Here you can keep notes regarding the farm ..."}
+
+           :irr-costs-label {:lang/de "Mittl. Beregnungskosten"
+                             :lang/en "Avg irrigation costs"}
+           :irr-costs-placeholder {:lang/de "Mittl. Beregnungskosten"
+                                   :lang/en "Avg irrigation costs"}
+
+           :show-data {:lang/de "Daten anzeigen"
+                       :lang/en "Show data"}
+
+           :edit-farm-button-label {:lang/de "Ändern"
+                                      :lang/en "Edit"}
+           #_:edit-farm-button-label-2 #_{:lang/de "Ändern"
+                                      :lang/en "Edit"}
+
+           :save-edit {:lang/de "Änderungen speichern"
+                       :lang/en "Save changes"}
+           :chart-header {:lang/de "Wetterdaten"
+                          :lang/en "Weather data"}
+           :chart-subheader {:lang/de "Quelle: DWD Station"
+                             :lang/en "Source: DWD station"}
+
+           :dc {:lang/de "BEREST DC Code"
+                :lang/en "BEREST DC code"}
+
+           :cover-degree {:lang/de "Bedeckungsgrad"
+                          :lang/en "Cover degree"}
+
+           :extraction-depth {:lang/de "Entzugstiefe"
+                              :lang/en "Extraction depth"}
+
+           :aet-pet {:lang/de "Quotient AET/PET"
+                     :lang/en "Quotient AET/PET"}
+
+           :transpiration-factor {:lang/de "Transpirations-Faktor"
+                                  :lang/en "Transpiration factor"}
+           }
+          [element (or lang :lang/de)] "UNKNOWN element"))
+
+
+(defelem
+  farm
+  [{{:keys [id
+            name name!
+            addresses
+            com-connections
+            contacts
+            notes notes!
+            avg-irrigation-costs avg-irrigation-costs!
+            irrigation-technologies
+            plots
+            authorative-weather-station authorative-weather-station!
+            weather-station weather-station!
+            weather-data]} :fields
+    {:keys [edit? label-cols value-cols]} :opts
+    :as attrs}
+   kids]
+  (let [edit? (cell (if (cell? edit?) @edit? edit?))
+        no-edit? (cell= (not edit?))
+        address-count (cell= (count addresses))
+        [farm-form-name name-id notes-id irr-costs-id
+         authorative-ws-id ws-id weather-data-id] (repeatedly gensym)]
+    ((bs/form-horizontal
+       :name farm-form-name
+
+       (bs/form-group
+         (bs/control-label :col {:sm label-cols} :for name-id (text "~(vocab :name-label s/lang)"))
+         (div
+           :col {:xs value-cols}
+           (p :toggle no-edit? :class "form-control-static" (text "~{name}"))
+           (input
+             :id name-id
+             :toggle edit?
+             :class "form-control"
+             :type "text"
+             :placeholder (cell= (vocab :name-placeholder s/lang))
+             :value name
+             :change #(name! @%))))
+
+       (let [visible? (cell false)]
+         (fieldset
+           (uic/hover-activate-wrapper
+             :action! #(swap! visible? not)
+             (legend
+               :style "padding-left:0px"
+               :col {:xs 11}
+               (text "~(vocab :address-fieldset-label s/lang) ~(when-not visible? \" ...\")")))
+           (button
+             :col {:xs 1}
+             :toggle visible?
+             :class "btn btn-warning btn-sm"
+             :click #(s/create-new-farm-address @id)
+             (text "~(vocab :new-address-button-label s/lang)"))
+
+           (loop-tpl
+             :bindings [{db-id :db/id
+                         description :address/description
+                         street :address/street
+                         postal-code :address/postal-code
+                         city :address/city
+                         city-part :address/city-part
+                         municipality :address/municipality
+                         municipality-short :address/municipality-short
+                         state :address/state
+                         state-short :address/state-short
+                         country :address/country
+                         country-short :address/country-short
+                         :as address}
+                        (cell= (sort-by :db/id addresses))]
+             (div
+               :class "row"
+
+               (div
+                 :toggle visible?
+                 :col {:xs 10}
+
+                 (addr/address
+                   :fields {:description description :description! #(s/update-db-entity @db-id :address/description %)
+                            :street street :street! #(s/update-db-entity @db-id :address/street %)
+                            :postal-code postal-code :postal-code! #(s/update-db-entity @db-id :address/postal-code %)
+                            :city city :city! #(s/update-db-entity @db-id :address/city %)
+                            :city-part city-part :city-part! #(s/update-db-entity @db-id :address/city-part %)
+                            :municipality municipality :municipality! #(s/update-db-entity @db-id :address/municipality %)
+                            :municipality-short municipality-short :municipality-short! #(s/update-db-entity @db-id :address/municipality-short %)
+                            :state state :state! #(s/update-db-entity @db-id :address/state %)
+                            :state-short state-short :state-short! #(s/update-db-entity @db-id :address/state-short %)
+                            :country country :country! #(s/update-db-entity @db-id :address/country %)
+                            :country-short country-short :country-short! #(s/update-db-entity @db-id :address/country-short %)}
+                   :opts {:edit? edit?
+                          :label-cols (+ label-cols 2)
+                          :value-cols value-cols})
+
+                 (hr))
+
+               (div
+                 :toggle visible?
+                 :col {:xs 2}
+
+                 (uic/safe-delete-button
+                   :toggle edit?
+                   :small-button? true
+                   :action! #(s/delete-db-entity @db-id)
+                   :value (cell= (vocab :delete-address-button-label s/lang))))))))
+
+       (let [visible? (cell false)]
+         (fieldset
+           (uic/hover-activate-wrapper
+             :action! #(swap! visible? not)
+             (legend
+               :style "padding-left:0px"
+               :col {:xs 11}
+               (text "~(vocab :contacts-fieldset-label s/lang) ~(when-not visible? \" ...\")")))
+           (button
+             :col {:xs 1}
+             :toggle visible?
+             :class "btn btn-warning btn-sm"
+             :click #(s/create-new-farm-contact @id)
+             (text "~(vocab :new-contact-button-label s/lang)"))
+
+           (loop-tpl
+             :bindings [{db-id :db/id
+                         title :person/title
+                         first-name :person/first-name
+                         last-name :person/last-name
+                         roles :person/roles
+                         com-connections :person/com-connections
+                         is-main-contact? :person/is-main-contact
+                         notes :person/notes
+                         :as contact} (cell= (sort-by #(str (:person/last-name %) ", " (:person/first-name %)) contacts))]
+             ;:bind-ids [farm-id]
+             (div
+               :class "row"
+
+               (div
+                 :toggle visible?
+                 :col {:xs 10}
+
+                 (contacts/contact
+                   :fields {:db-id db-id
+                            :title title :title! #(s/update-db-entity @db-id :person/title %)
+                            :first-name first-name :first-name! #(s/update-db-entity @db-id :person/first-name %)
+                            :last-name last-name :last-name! #(s/update-db-entity @db-id :person/last-name %)
+                            :roles roles :roles! #(s/update-db-entity @db-id :person/roles %)
+                            :com-connections com-connections ;:com-connections! #(s/update-db-entity @db-id :person/com-connections %)
+                            :is-main-contact? is-main-contact? :is-main-contact?! #(s/update-db-entity @db-id :person/is-main-contact %)
+                            :notes notes :notes! #(s/update-db-entity @db-id :person/notes %)}
+                   :opts {:edit? edit?
+                          :label-cols (+ label-cols 2)
+                          :value-cols value-cols})
+
+                 (hr))
+
+               (div
+                 :toggle visible?
+                 :col {:xs 2}
+
+                 (uic/safe-delete-button
+                   :toggle edit?
+                   :action! #(s/delete-db-entity @db-id)
+                   :value (cell= (vocab :delete-contact-button-label s/lang))))))))
+
+       (bs/form-group
+         (bs/control-label :col {:sm label-cols} :for name-id (text "~(vocab :irr-costs-label s/lang)"))
+         (div
+           :col {:xs 2}
+           (p :toggle no-edit? :class "form-control-static" (text "~{avg-irrigation-costs}"))
+           (div
+             :class "input-group"
+             (input
+               :id irr-costs-id
+               :toggle edit?
+               :class "form-control"
+               :type "number"
+               :step 1
+               :min 0
+               :max 100
+               :placeholder (cell= (vocab :irr-costs-placeholder s/lang))
+               :value avg-irrigation-costs
+               :change #(avg-irrigation-costs! (js/parseFloat @%)))
+             (span :class "input-group-addon" "€/mm"))))
+
+       (bs/form-group
+         (bs/control-label :col {:sm label-cols} :for notes-id (text "~(vocab :notes-label s/lang)"))
+         (div
+           :col {:xs 7}
+           (p :toggle no-edit? :class "form-control-static" (text "~{notes}"))
+           (textarea
+             :id notes-id
+             :toggle edit?
+             :class "form-control"
+             :rows 5
+             :placeholder (cell= (vocab :notes-placeholder s/lang))
+             :value notes
+             :change #(notes! @%))))
+
+       (fieldset
+         (legend (text "~(vocab :weather-stations-fieldset-label s/lang)"))
+
+         (bs/form-group
+           :class (cell= {:has-error (nil? authorative-weather-station)})
+
+           (bs/control-label :col {:sm label-cols} :for authorative-ws-id
+                             (text "~(vocab :authorative-weather-station-label s/lang)"))
+           (div
+             :col {:xs value-cols}
+             (p :toggle no-edit? :class "form-control-static"
+                (text "~(or (:weather-station/name authorative-weather-station)
+                  (:weather-station/id authorative-weather-station))"))
+             (select
+               :toggle edit?
+               :id authorative-ws-id
+               :class "form-control"
+               :change #(authorative-weather-station! (when (seq @%) (js/parseInt @%)))
+               (option :value "" "")
+               (loop-tpl
+                 :bindings [{ws-db-id :db/id
+                             ws-id :weather-station/id
+                             ws-name :weather-station/name}
+                            (cell= (sort-by #(if-let [name (:weather-station/name %)]
+                                              name
+                                              (:weather-station/id %)) s/user-weather-stations))]
+                 (option :value ws-db-id
+                         :selected (cell= (= ws-id (:weather-station/id authorative-weather-station)))
+                         (text "~(or ws-name ws-id)"))))))
+
+         (bs/form-group
+           ;:class (cell= {:has-error (nil? weather-station)})
+
+           (bs/control-label :col {:sm label-cols} :for ws-id
+                             (text "~(vocab :weather-station-label s/lang)"))
+           (div
+             :col {:xs value-cols}
+             (p :toggle no-edit? :class "form-control-static"
+                (text "~(or (:weather-station/name weather-station)
+                  (:weather-station/id weather-station))"))
+             (select
+               :toggle edit?
+               :id ws-id
+               :class "form-control"
+               :change #(weather-station! (when (seq @%) (js/parseInt @%)))
+               (option :value "" "")
+               (loop-tpl
+                 :bindings [{ws-db-id :db/id
+                             ws-id :weather-station/id
+                             ws-name :weather-station/name}
+                            (cell= (sort-by #(if-let [name (:weather-station/name %)]
+                                              name
+                                              (:weather-station/id %)) s/user-weather-stations))]
+                 (option :value ws-db-id
+                         :selected (cell= (= ws-id (:weather-station/id weather-station)))
+                         (text "~(or ws-name ws-id)"))))))
+
+         (let [visible? (cell false)]
+           (fieldset
+             (uic/hover-activate-wrapper
+               :action! #(swap! visible? not)
+               (legend
+                 (text "~(vocab :weather-data-fieldset-label s/lang) ~(when-not visible? \" ...\")")))
+
+             (uie/weather-data-form-group
+               :visible? visible?
+               :edit true
+               :weather-data weather-data
+               :id-attr :farm/id
+               :id id)))
+
+         ))
+     (dissoc attrs :fields :opts) kids)))

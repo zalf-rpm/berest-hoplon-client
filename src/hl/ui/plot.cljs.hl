@@ -1,0 +1,587 @@
+(ns ui.plot
+  (:require [de.zalf.berest.client.hoplon.util :as util]
+            [ui.elements :as uie]
+            [ui.addresses :as addr]
+            [bootstrap-util :as bsu]
+            [hoplon.twitter.bootstrap :as bs]
+            [de.zalf.berest.client.hoplon.state :as s]))
+
+
+(defn vocab
+  "translatable vocabulary for this page"
+  [element lang]
+  (get-in {:name-label {:lang/de "Name"
+                        :lang/en "Name"}
+           :name-placeholder {:lang/de "Name des Schlages"
+                              :lang/en "Name of plot"}
+
+           :number-label {:lang/de "Nummer"
+                          :lang/en "Number"}
+           :number-placeholder {:lang/de "BEREST-Nummer des Schlages"
+                                :lang/en "BEREST-number of plot"}
+
+           :description-label {:lang/de "Beschreibung"
+                               :lang/en "Description"}
+           :description-placeholder {:lang/de "Beschreibung des Schlages"
+                                     :lang/en "Description of plot"}
+
+           :short-description-label {:lang/de "Kurz-Beschreibung"
+                                     :lang/en "Short-description"}
+           :short-description-placeholder {:lang/de "Kurzbeschreibung des Schlages"
+                                           :lang/en "Short description of plot"}
+
+           :crop-area-label {:lang/de "Anbaufläche"
+                             :lang/en "Cropping area"}
+           :crop-area-placeholder {:lang/de "Fläche des Schlages"
+                                   :lang/en "Cropping area of plot"}
+
+           :groundwaterlevel-label {:lang/de "Grundwasserstand"
+                                    :lang/en "Groundwaterlevel"}
+           :groundwaterlevel-placeholder {:lang/de "Niveau des Grundwasserstandes"
+                                          :lang/en "Groundwaterlevel"}
+
+           :irrigation-area-label {:lang/de "Beregnete Fläche"
+                                   :lang/en "Irrigated area"}
+           :irrigation-area-placeholder {:lang/de "Fläche unter Beregnung"
+                                         :lang/en "Area under irrigation"}
+
+           :stt-label {:lang/de "Standorttyp (MMK STT)"
+                       :lang/en "MMK STT"}
+
+           :slope-label {:lang/de "Hangneigung (MMK NFT)"
+                         :lang/en "Slope (MMK NFT)"}
+
+           :field-capacities-label {:lang/de "Feldkapazitäten"
+                                    :lang/en "Field capacities"}
+
+           :permanent-wilting-points-label {:lang/de "Permanente Welkepunkte"
+                                            :lang/en "Permanent wilting points"}
+
+           :ka5-soil-types-label {:lang/de "KA5 Bodentypen"
+                                  :lang/en "KA5 soil types"}
+
+           :substrate-groups-label {:lang/de "Substratgruppen für"
+                                    :lang/en "Substrate groups for"}
+
+           :soil-data-fieldset-label {:lang/de "Bodendaten/Bodenschichtungsdaten"
+                                      :lang/en "Soil data/soil layer data"}
+
+           :fc-pwp-data-fieldset-label {:lang/de "Feldkapazitäten/Permanente Welkepunkte"
+                                      :lang/en "Field capacities/permenent wilting points"}
+
+           :fc-pwp-unit-label {:lang/de "FK/PWP Einheit"
+                               :lang/en "FC/PWP unit"}
+
+           :pFK {:lang/de "% FK"
+                 :lang/en "% FC"}
+
+           :pNFK {:lang/de "% NFK"
+                 :lang/en "% NFC"}
+
+           :volP {:lang/de "Vol.%"
+                 :lang/en "vol.%"}
+
+           :mm {:lang/de "mm"
+                :lang/en "mm"}
+
+
+           :weather-data-fieldset-label {:lang/de "Wetterdaten (Schlag-Ebene)"
+                                         :lang/en "Weather data (Plot level)"}
+
+           :weather-station-label {:lang/de "lokale Wetterstation"
+                                   :lang/en "Local weather station"}
+
+           :weather-data-label {:lang/de "Manuelle Wetterdaten"
+                                :lang/en "Manual weather data"}
+
+           :notes-label {:lang/de "Notizen"
+                         :lang/en "Notes"}
+           :notes-placeholder {:lang/de "Hier können Notizen zum Schlag gemacht werden ..."
+                               :lang/en "Here you can keep notes regarding the plot ..."}
+
+           :show-data {:lang/de "Daten anzeigen"
+                       :lang/en "Show data"}
+
+           :edit-plot-button-label {:lang/de "Ändern"
+                                      :lang/en "Edit"}
+
+           :add-layer-label {:lang/de "Schicht hinzufügen"
+                             :lang/en "Add layer"}
+           :remove-layer-label {:lang/de "Schicht entfernen"
+                                :lang/en "Remove layer"}
+           :depth-placeholder {:lang/de "Tiefe [cm]"
+                               :lang/en "Depth [cm]"}
+           :value-placeholder {:lang/de "Wert"
+                               :lang/en "Value"}
+
+
+           :chart-header {:lang/de "Wetterdaten"
+                          :lang/en "Weather data"}
+           :chart-subheader {:lang/de "Quelle: DWD Station"
+                             :lang/en "Source: DWD station"}
+
+           :dc {:lang/de "BEREST DC Code"
+                :lang/en "BEREST DC code"}
+
+           :cover-degree {:lang/de "Bedeckungsgrad"
+                          :lang/en "Cover degree"}
+
+           :extraction-depth {:lang/de "Entzugstiefe"
+                              :lang/en "Extraction depth"}
+
+           :aet-pet {:lang/de "Quotient AET/PET"
+                     :lang/en "Quotient AET/PET"}
+
+           :transpiration-factor {:lang/de "Transpirations-Faktor"
+                                  :lang/en "Transpiration factor"}
+           }
+          [element (or lang :lang/de)] "UNKNOWN element"))
+
+
+
+(defelem
+  plot
+  [{{:keys [id
+            name name!
+            number number!
+            description description!
+            short-description short-description!
+            crop-area crop-area!
+            irrigation-area irrigation-area!
+            stt stt!
+            slope slope!
+            field-capacities field-capacities!
+            fc-pwp-unit fc-pwp-unit!
+            permanent-wilting-points permanent-wilting-points!
+            ka5-soil-types ka5-soil-types!
+            groundwaterlevel groundwaterlevel!
+            annuals
+            weather-station weather-station!
+            weather-data
+            location-coords location-coords!
+            notes notes!
+            az-glz az-glz!
+            nft nft!
+            bse bse!
+            sse sse!
+            bwb bwb!
+            irrigation-well irrigation-well!]} :fields
+    {:keys [edit? label-cols value-cols]} :opts
+    :as attrs}
+   kids]
+  (let [edit? (cell (if (cell? edit?) @edit? edit?))
+        no-edit? (cell= (not edit?))
+        [plot-form-name
+         name-id
+         number-id
+         description-id
+         short-description-id
+         crop-area-id
+         irrigation-area-id
+         stt-id
+         slope-id
+         field-capacities-id
+         substrate-groups-fc-id
+         fc-pwp-unit-id
+         permanent-wilting-points-id
+         stt-pwp-id
+         ka5-soil-types-id
+         groundwaterlevel-id
+         annuals-id
+         weather-station-id
+         weather-data-id
+         location-coords-id
+         notes-id
+         az-glz-id
+         nft-id
+         bse-id
+         sse-id
+         bwb-id
+         irrigation-well-id] (repeatedly gensym)
+        selected-stt-substrate-group-keys (cell= (:soil.stt/substrate-groups stt))
+
+        ]
+    ((div
+       (bs/form-horizontal
+         :name plot-form-name
+
+         (button
+           :style "float:right"
+           :class "btn btn-info"
+           :click #(swap! edit? not)
+           (text "~(vocab :edit-plot-button-label s/lang)"))
+
+         (bs/form-group
+           (bs/control-label :col {:sm label-cols} :for name-id (text "~(vocab :name-label s/lang)"))
+           (div
+             :col {:xs value-cols}
+             (p :toggle no-edit? :class "form-control-static" (text "~{name}"))
+             (input
+               :id name-id
+               :toggle edit?
+               :class "form-control"
+               :type "text"
+               :placeholder (cell= (vocab :name-placeholder s/lang))
+               :value name
+               :change #(name! @%))))
+
+         (bs/form-group
+           (bs/control-label :col {:sm label-cols} :for number-id (text "~(vocab :number-label s/lang)"))
+           (div
+             :col {:xs value-cols}
+             (p :toggle no-edit? :class "form-control-static" (text "~{number}"))
+             (input
+               :id number-id
+               :toggle edit?
+               :class "form-control"
+               :type "text"
+               :placeholder (cell= (vocab :number-placeholder s/lang))
+               :value number
+               :change #(number! @%))))
+
+         (bs/form-group
+           (bs/control-label :col {:sm label-cols} :for description-id (text "~(vocab :description-label s/lang)"))
+           (div
+             :col {:xs value-cols}
+             (p :toggle no-edit? :class "form-control-static" (text "~{description}"))
+             (input
+               :id description-id
+               :toggle edit?
+               :class "form-control"
+               :type "text"
+               :placeholder (cell= (vocab :description-placeholder s/lang))
+               :value description
+               :change #(description! @%))))
+
+         (bs/form-group
+           (bs/control-label :col {:sm label-cols} :for short-description-id (text "~(vocab :short-description-label s/lang)"))
+           (div
+             :col {:xs value-cols}
+             (p :toggle no-edit? :class "form-control-static" (text "~{short-description}"))
+             (input
+               :id short-description-id
+               :toggle edit?
+               :class "form-control"
+               :type "text"
+               :placeholder (cell= (vocab :short-description-placeholder s/lang))
+               :value short-description
+               :change #(short-description! @%))))
+
+         (bs/form-group
+           (bs/control-label :col {:sm label-cols} :for crop-area-id (text "~(vocab :crop-area-label s/lang)"))
+           (div
+             :col {:xs value-cols}
+             (p :toggle no-edit? :class "form-control-static" (text "~{crop-area}"))
+             (div
+               :class "input-group"
+               (input
+                 :id crop-area-id
+                 :toggle edit?
+                 :class "form-control"
+                 :type "number"
+                 :step 0.1
+                 :min 0
+                 :placeholder (cell= (vocab :crop-area-placeholder s/lang))
+                 :value crop-area
+                 :change #(crop-area! (js/parseFloat @%)))
+               (span :class "input-group-addon" "ha"))))
+
+         (bs/form-group
+           (bs/control-label :col {:sm label-cols} :for irrigation-area-id (text "~(vocab :irrigation-area-label s/lang)"))
+           (div
+             :col {:xs value-cols}
+             (p :toggle no-edit? :class "form-control-static" (text "~{irrigation-area}"))
+             (div
+               :class "input-group"
+               (input
+               :id irrigation-area-id
+               :toggle edit?
+               :class "form-control"
+               :type "number"
+               :step 0.1
+               :min 0
+               :placeholder (cell= (vocab :irrigation-area-placeholder s/lang))
+               :value irrigation-area
+               :change #(irrigation-area! (js/parseFloat @%)))
+               (span :class "input-group-addon" "ha"))))
+
+         (fieldset
+           (legend (text "~(vocab :soil-data-fieldset-label s/lang)"))
+
+           (bs/form-group
+             (bs/control-label :col {:sm (+ 1 label-cols)} :for stt-id (text "~(vocab :stt-label s/lang)"))
+             (div
+               :col {:xs (min (+ value-cols 2) (- 12 label-cols))}
+               (p :toggle no-edit? :class "form-control-static" (text "~{stt}"))
+               (select
+                 :toggle edit?
+                 :id stt-id
+                 :class "form-control"
+                 :change #(stt! (js/parseInt @%))
+                 (loop-tpl
+                   :bindings [{key :soil.stt/key
+                               symbol :soil.stt/symbol
+                               description :soil.stt/description
+                               subs-groups :soil.stt/substrate-groups}
+                              (cell= (sort-by :soil.stt/symbol s/stts))]
+                   (option :value key
+                           :selected (cell= (= key (:soil.stt/key stt)))
+                           (text "~{symbol} | ~{description}"))))))
+
+           (bs/form-group
+             (bs/control-label :col {:sm (+ 1 label-cols)} :for slope-id (text "~(vocab :slope-label s/lang)"))
+             (div
+               :col {:xs value-cols}
+               (p :toggle no-edit? :class "form-control-static" (text "~{slope}"))
+               (select
+                 :toggle edit?
+                 :id slope-id
+                 :class "form-control"
+                 :change #(slope! (js/parseInt @%))
+                 (loop-tpl
+                   :bindings [{key :slope/key
+                               symbol :slope/symbol
+                               description :slope/description}
+                              (cell= (sort-by :slope/key s/slopes))]
+                   (option :value key
+                           :selected (cell= (= key (:slope/key slope)))
+                           (text "~{symbol} | ~{description}"))))))
+
+           (bs/form-group
+             (bs/control-label :col {:sm (+ 1 label-cols)} :for ka5-soil-types-id
+                               (text "~(vocab :ka5-soil-types-label s/lang)"))
+             (let [depth* (cell nil)
+                   ka5* (cell nil)]
+               (div
+                 :col {:xs (min (+ value-cols 2) (- 12 label-cols))}
+                 #_(p :toggle no-edit? :class "form-control-static" (text "~{irrigation-area}"))
+
+                 (loop-tpl
+                   :bindings [[row-no {db-id :db/id
+                                       ka5 :soil/ka5-soil-type
+                                       depth :soil/upper-boundary-depth}]
+                              (cell= (util/indexed (sort-by :soil/upper-boundary-depth ka5-soil-types)))]
+                   (uie/create-ka5-inputs
+                     :fields {:row-no row-no
+                              :row-action! #(s/delete-db-entity @db-id)
+                              :depth depth :depth! #(s/update-db-entity @db-id :soil/upper-boundary-depth %)
+                              :value ka5 :value! #(s/update-db-entity @db-id :soil/ka5-soil-type %)}))
+                 (uie/create-ka5-inputs
+                   :fields {:row-action! #(when (and @depth* @ka5*)
+                                           (s/create-new-soil-data-layer :plot/id @id @depth* :ka5 @ka5*)
+                                           (reset! depth* nil)
+                                           (reset! ka5* nil))
+                            :depth depth* :depth! #(reset! depth* %)
+                            :value ka5* :value! #(reset! ka5* %)}))))
+
+
+           (fieldset
+             (legend
+               :style "font-size: 18px; margin-left: 5%; width:95%"
+               (text "~(vocab :fc-pwp-data-fieldset-label s/lang)"))
+
+             (bs/form-group
+               :toggle edit? ;we don't have to show this for read-only mode
+               (bs/control-label :col {:sm (+ 1 label-cols)} :for substrate-groups-fc-id
+                                 (text "~(vocab :substrate-groups-label s/lang) ~(:soil.stt/symbol stt)"))
+               (div
+                 :col {:xs value-cols}
+                 (select
+                   :id substrate-groups-fc-id
+                   :class "form-control"
+                   :change #(s/set-substrate-group-fcs-and-pwps @id (js/parseInt @%))
+                   (option "")
+                   (loop-tpl
+                     :bindings [{key :soil.substrate/key
+                                 symbol :soil.substrate/symbol
+                                 description :soil.substrate/description
+                                 fcs :soil.substrate/field-capacities}
+                                (cell= (->> selected-stt-substrate-group-keys
+                                            (select-keys s/substrate-groups,,,)
+                                            vals
+                                            (sort-by :soil.substrate/description,,,)))]
+                     (option :value key
+                             ;:selected (cell= (= key (:soil.stt/key stt)))
+                             (text "~{symbol} | ~{description}"))))))
+
+             (bs/form-group
+               :toggle edit? ;we don't have to show this for read-only mode
+               (bs/control-label :col {:sm (+ 1 label-cols)} :for fc-pwp-unit-id
+                                 (text "~(vocab :fc-pwp-unit-label s/lang)"))
+               (div
+                 :col {:xs 2}
+                 (select
+                   :disabled "disabled"
+                   :id fc-pwp-unit-id
+                   :class "form-control"
+                   :change #(fc-pwp-unit! (keyword @%))
+                   (option :value "soil-moisture.unit/pFK"
+                           :selected (cell= (= fc-pwp-unit :soil-moisture.unit/pFK))
+                           (text "~(vocab :pFK s/lang)"))
+                   (option :value "soil-moisture.unit/pNFK"
+                           :selected (cell= (= fc-pwp-unit :soil-moisture.unit/pNFK))
+                           (text "~(vocab :pNFK s/lang)"))
+                   (option :value "soil-moisture.unit/volP"
+                           :selected (cell= (= fc-pwp-unit :soil-moisture.unit/volP))
+                           (text "~(vocab :volP s/lang)"))
+                   (option :value "soil-moisture.unit/mm"
+                           :selected (cell= (= fc-pwp-unit :soil-moisture.unit/mm))
+                           (text "~(vocab :mm s/lang)")))))
+
+             (bs/form-group
+               (bs/control-label :col {:sm (+ 1 label-cols)} :for field-capacities-id
+                                 (text "~(vocab :field-capacities-label s/lang)"))
+               (let [depth* (cell nil)
+                     fc* (cell nil)
+                     unit* (cell= (vocab (keyword ((fnil clojure.core/name "") fc-pwp-unit)) s/lang))]
+                 (div
+                   :col {:xs (min (+ value-cols 2) (- 12 label-cols))}
+                   #_(p :toggle no-edit? :class "form-control-static" (text "~{irrigation-area}"))
+
+                   (loop-tpl
+                     :bindings [[row-no {db-id :db/id
+                                         fc :soil/field-capacity
+                                         depth :soil/upper-boundary-depth}]
+                                (cell= (util/indexed (sort-by :soil/upper-boundary-depth field-capacities)))]
+                     (uie/create-soil-data-inputs
+                       :fields {:row-no row-no
+                                :row-action! #(s/delete-db-entity @db-id)
+                                :unit unit*
+                                :depth depth :depth! #(s/update-db-entity @db-id :soil/upper-boundary-depth %)
+                                :value fc :value! #(s/update-db-entity @db-id :soil/field-capacity % :value-type :double)}))
+                   (uie/create-soil-data-inputs
+                     :fields {:row-action! #(when (and @depth* @fc*)
+                                             (s/create-new-soil-data-layer :plot/id @id @depth* :fc @fc*)
+                                             (reset! depth* nil)
+                                             (reset! fc* nil))
+                              :unit unit*
+                              :depth depth* :depth! #(reset! depth* %)
+                              :value fc* :value! #(reset! fc* %)})
+                   )))
+
+             (bs/form-group
+               (bs/control-label :col {:sm (+ 1 label-cols)} :for permanent-wilting-points-id
+                                 (text "~(vocab :permanent-wilting-points-label s/lang)"))
+               (let [depth* (cell nil)
+                     pwp* (cell nil)
+                     unit* (cell= (vocab (keyword ((fnil clojure.core/name "") fc-pwp-unit)) s/lang))]
+                 (div
+                   :col {:xs (min (+ value-cols 2) (- 12 label-cols))}
+                   #_(p :toggle no-edit? :class "form-control-static" (text "~{irrigation-area}"))
+
+                   (loop-tpl
+                     :bindings [[row-no {db-id :db/id
+                                         pwp :soil/permanent-wilting-point
+                                         depth :soil/upper-boundary-depth}]
+                                (cell= (util/indexed (sort-by :soil/upper-boundary-depth permanent-wilting-points)))]
+                     (uie/create-soil-data-inputs
+                       :fields {:row-no row-no
+                                :row-action! #(s/delete-db-entity @db-id)
+                                :unit unit*
+                                :depth depth :depth! #(s/update-db-entity @db-id :soil/upper-boundary-depth %)
+                                :value pwp :value! #(s/update-db-entity @db-id :soil/permanent-wilting-point %
+                                                                        :value-type :double)}))
+                   (uie/create-soil-data-inputs
+                     :fields {:row-action! #(when (and @depth* @pwp*)
+                                             (s/create-new-soil-data-layer :plot/id @id @depth* :pwp @pwp*)
+                                             (reset! depth* nil)
+                                             (reset! pwp* nil))
+                              :unit unit*
+                              :depth depth* :depth! #(reset! depth* %)
+                              :value pwp* :value! #(reset! pwp* %)})
+                   )))
+             ))
+
+         (bs/form-group
+           (bs/control-label :col {:sm label-cols} :for groundwaterlevel-id (text "~(vocab :groundwaterlevel-label s/lang)"))
+           (div
+             :col {:xs value-cols}
+             (p :toggle no-edit? :class "form-control-static" (text "~{groundwaterlevel}"))
+             (div
+               :class "input-group"
+               (input
+                 :id groundwaterlevel-id
+                 :toggle edit?
+                 :class "form-control"
+                 :type "number"
+                 :step 1
+                 :min 0
+                 :placeholder (cell= (vocab :groundwaterlevel-placeholder s/lang))
+                 :value groundwaterlevel
+                 :change #(groundwaterlevel! (js/parseFloat @%)))
+               (span :class "input-group-addon" "cm"))))
+
+
+         (bs/form-group
+           (bs/control-label :col {:sm label-cols} :for notes-id (text "~(vocab :notes-label s/lang)"))
+           (div
+             :col {:xs 7}
+             (p :toggle no-edit? :class "form-control-static" (text "~{notes}"))
+             (textarea
+               :id notes-id
+               :toggle edit?
+               :class "form-control"
+               :rows 5
+               :placeholder (cell= (vocab :notes-placeholder s/lang))
+               :value notes
+               :change #(notes! @%))))
+
+         (fieldset
+           (legend (text "~(vocab :weather-data-fieldset-label s/lang)"))
+
+           (bs/form-group
+             (bs/control-label :col {:sm label-cols} :for weather-station-id
+                               (text "~(vocab :weather-station-label s/lang)"))
+             (div
+               :col {:xs value-cols}
+               (p :toggle no-edit? :class "form-control-static"
+                  (text "~(or (:weather-station/name weather-station)
+                  (:weather-station/id weather-station))"))
+               (select
+                 :toggle edit?
+                 :id weather-station-id
+                 :class "form-control"
+                 :change #(weather-station! (when (seq @%) (js/parseInt @%)))
+                 (option :value "" "")
+                 (loop-tpl
+                   :bindings [{ws-db-id :db/id
+                               ws-id :weather-station/id
+                               ws-name :weather-station/name}
+                              (cell= (sort-by #(if-let [name (:weather-station/name %)]
+                                                name
+                                                (:weather-station/id %)) s/user-weather-stations))]
+                   (option :value ws-db-id
+                           :selected (cell= (= ws-id (:weather-station/id weather-station)))
+                           (text "~(or ws-name ws-id)")))))))
+
+
+         #_(let [visible? (cell false)]
+              (fieldset
+                (uic/hover-activate-wrapper
+                  :action! #(swap! visible? not)
+                  (legend
+                    (text "~(vocab :more-stuff-fieldset-label s/lang) ~(when-not visible? \" ...\")")))
+
+                (bs/form-group
+                  (bs/control-label :col {:sm label-cols} :for az-glz-id (text "~(vocab :az-glz-label s/lang)"))
+                  (div
+                    :col {:xs value-cols}
+                    (p :toggle no-edit? :class "form-control-static" (text "~{az-glz}"))
+                    (input
+                      :id az-glz-id
+                      :toggle edit?
+                      :class "form-control"
+                      :type "number"
+                      :step 1
+                      :min 0
+                      :max 100
+                      :placeholder (cell= (vocab :az-glz-placeholder s/lang))
+                      :value az-glz
+                      :change #(az-glz! (js/parseInt @%)))))
+
+
+
+
+                ))
+
+         )) (dissoc attrs :fields :opts) kids)))

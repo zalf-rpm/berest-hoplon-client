@@ -1,0 +1,237 @@
+(ns ui.user
+  (:require [de.zalf.berest.client.hoplon.util :as util]
+            [ui.elements :as uie]
+            [bootstrap-util :as bsu]
+            [hoplon.twitter.bootstrap :as bs]
+            [de.zalf.berest.client.hoplon.state :as s]))
+
+(defn vocab
+  "translatable vocabulary for this page"
+  [element lang]
+  (get-in {:full-name-label {:lang/de "Voller Name"
+                             :lang/en "Full name"}
+           :full-name-placeholder {:lang/de "Name des Nutzers"
+                                   :lang/en "Name of user"}
+
+           :pwd-label {:lang/de "Passwort"
+                       :lang/en "Password"}
+           :pwd1-placeholder {:lang/de "Neues Passwort eingeben"
+                             :lang/en "Enter new password"}
+           :pwd2-placeholder {:lang/de "Neues Passwort wiederholen"
+                              :lang/en "Repeat new password"}
+           :pwd-updated-successfully {:lang/de "Passwort wurde erfolgreich geändert"
+                                      :lang/en "Password has been changed successfully"}
+
+           :roles-label {:lang/de "Rollen"
+                         :lang/en "Roles"}
+           :admin-role {:lang/de "Administrator"
+                         :lang/en "Administrator"}
+           :consultant-role {:lang/de "Berater"
+                             :lang/en "Consultant"}
+           :farmer-role {:lang/de "Landwirt"
+                         :lang/en "Farmer"}
+           :guest-role {:lang/de "Gast"
+                         :lang/en "Guest"}
+
+           :available-weathers-station-label {:lang/de "Verfügbare Wetterstationen"
+                                              :lang/en "Available weather stations"}
+           :select-weather-stations-button-label {:lang/de "Station(en) hinzufügen ->"
+                                              :lang/en "Add station(s) ->"}
+           :unselect-weather-stations-button-label {:lang/de "<- Station(en) entfernen"
+                                              :lang/en "<- Remove station(s)"}
+
+           :edit-user-button-label {:lang/de "Ändern"
+                                    :lang/en "Edit"}
+           }
+          [element (or lang :lang/de)] "UNKNOWN element"))
+
+
+
+(defelem
+  user
+  [{{:keys [id
+            full-name full-name!
+            roles
+            weather-stations
+            farms]} :fields
+    {:keys [edit? label-cols value-cols]} :opts
+    :as attrs}
+   kids]
+  (let [edit? (cell (if (cell? edit?) @edit? edit?))
+        no-edit? (cell= (not edit?))
+        [user-form-name
+         name-id
+         full-name-id
+         pwd-id
+         pwd2-id
+         roles-id
+         selected-weather-stations-id
+         farms-id
+         all-weather-stations-id] (repeatedly gensym)
+
+        newly-selected-weather-stations (cell [])
+        selected-weather-stations (cell= (concat weather-stations newly-selected-weather-stations))
+
+        pwds (cell ["" ""])
+        pwd-error (cell false)
+        _ (cell= (if (not-any? empty? pwds)
+                   (if (apply = pwds)
+                     (do
+                       (reset! ~(cell pwd-error) false)
+                       (s/set-new-password id (first pwds)))
+                     (reset! ~(cell pwd-error) true))))
+        _ (cell= (when s/pwd-update-success?
+                       (reset! ~(cell pwds) ["" ""])
+                       (timeout #(reset! ~(cell s/pwd-update-success?) nil) 5000)))
+        ]
+    ((div
+       (bs/form-horizontal
+         :name user-form-name
+
+         (button
+           :style "float:right"
+           :class "btn btn-info"
+           :click #(swap! edit? not)
+           (text "~(vocab :edit-user-button-label s/lang)"))
+
+
+         (bs/form-group
+           (bs/control-label :col {:sm label-cols} :for full-name-id (text "~(vocab :full-name-label s/lang)"))
+           (div
+             :col {:xs value-cols}
+             (p :toggle no-edit? :class "form-control-static" (text "~{full-name}"))
+             (input
+               :id full-name-id
+               :toggle edit?
+               :class "form-control"
+               :type "text"
+               :placeholder (cell= (vocab :full-name-placeholder s/lang))
+               :value full-name
+               :change #(full-name! @%))))
+
+         (bs/form-group
+           :class (cell= {:has-error pwd-error})
+           (bs/control-label :col {:sm label-cols} :for pwd-id (text "~(vocab :pwd-label s/lang)"))
+           (div
+             :col {:xs value-cols}
+             (p
+               :toggle s/pwd-update-success?
+               :class (cell= {:bg-success s/pwd-update-success?
+                              :form-control-static true})
+               (text "~(vocab :pwd-updated-successfully s/lang)"))
+
+             (input
+               :id pwd-id
+               :toggle (cell= (and edit? (not s/pwd-update-success?)))
+               :class "form-control"
+               :type "password"
+               :placeholder (cell= (vocab :pwd1-placeholder s/lang))
+               :value (cell= (first pwds))
+               :change #(swap! pwds assoc 0 @%))
+
+             (input
+               :id pwd2-id
+               :toggle (cell= (and edit? (not s/pwd-update-success?)))
+               :class "form-control"
+               :type "password"
+               :placeholder (cell= (vocab :pwd2-placeholder s/lang))
+               :value (cell= (second pwds))
+               :change #(swap! pwds assoc 1 @%))))
+
+         (bs/form-group
+           (bs/control-label :col {:sm 2} :for roles-id (text "~(vocab :roles-label s/lang)"))
+           (div
+             :col {:xs 3}
+             (select
+               :id roles-id
+               :class "form-control"
+               :multiple "multiple"
+               :size 4
+               :change #(let [role-kws (mapv keyword @%)
+                                 _ (println (pr-str role-kws) " types: " (map type role-kws))]
+                                (s/update-user-roles @id role-kws))
+
+               (option
+                 :value "user.role/admin"
+                 :selected (cell= (not (nil? (some-> roles (get ,,, :user.role/admin)))))
+                 (text "~(vocab :admin-role s/lang)"))
+               (option
+                 :value "user.role/consultant"
+                 :selected (cell= (not (nil? (some-> roles (get,,, :user.role/consultant)))))
+                 (text "~(vocab :consultant-role s/lang)"))
+               (option
+                 :value "user.role/farmer"
+                 :selected (cell= (not (nil? (some-> roles (get ,,, :user.role/farmer)))))
+                 (text "~(vocab :farmer-role s/lang)"))
+               (option
+                 :value "user.role/guest"
+                 :selected (cell= (not (nil? (some-> roles (get ,,, :user.role/guest)))))
+                 (text "~(vocab :guest-role s/lang)")))))
+
+         (bs/form-group
+           (bs/control-label :col {:sm label-cols} :for all-weather-stations-id
+                             (text "~(vocab :available-weathers-station-label s/lang)"))
+           (div
+             :col {:xs (- 12 label-cols)}
+             (div
+               :class "container"
+               :style "margin-left: 0px; padding-left: 0px"
+               (let [selected-from-all-weather-stations (cell nil)
+                     selected-from-selected-weather-stations (cell nil)]
+                 (div
+                   :class "row"
+                   (div
+                     :col {:xs 4}
+
+                     (select
+                       :toggle edit?
+                       :id all-weather-stations-id
+                       :class "form-control"
+                       :multiple "multiple"
+                       :change #(reset! selected-from-all-weather-stations @%)
+                       (loop-tpl
+                         :bindings [{ws-id :weather-station/id
+                                     ws-name :weather-station/name}
+                                    (cell= (sort-by #(vector (:weather-station/name %) (:weather-station/id %))
+                                                    s/all-weather-stations))]
+                         (option
+                           :value ws-id
+                           (text "~(or ws-name ws-id)")))))
+
+                   (div
+                   :col {:xs 2}
+
+                   (button
+                     :class "btn btn-primary"
+                     :click #(s/add-user-weather-stations @id (map identity @selected-from-all-weather-stations))
+                     (text "~(vocab :select-weather-stations-button-label s/lang)"))
+
+                   (div
+                     :style "padding-top: 10px")
+
+                   (button
+                     :class "btn btn-primary"
+                     :click #(s/remove-user-weather-stations @id (map identity @selected-from-selected-weather-stations))
+                     (text "~(vocab :unselect-weather-stations-button-label s/lang)"))
+
+                   )
+
+                 (div
+                   :col {:xs 4}
+
+                   (select
+                     :toggle edit?
+                     :id selected-weather-stations-id
+                     :class "form-control"
+                     :multiple "multiple"
+                     :change #(reset! selected-from-selected-weather-stations @%)
+                     (loop-tpl
+                       :bindings [{ws-id :weather-station/id
+                                   ws-name :weather-station/name}
+                                  (cell= (sort-by #(if-let [name (:weather-station/name %)]
+                                                           name
+                                                           (:weather-station/id %)) selected-weather-stations))]
+                       (option
+                         :value ws-id
+                         (text "~(or ws-name ws-id)"))))))))))
+         )) (dissoc attrs :fields :opts) kids)))

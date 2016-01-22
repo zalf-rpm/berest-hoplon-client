@@ -1,0 +1,331 @@
+(ns ui.admin
+  (:require-macros [javelin.core :refer :all]
+                   [hoplon.core :refer :all])
+
+  (:require [javelin.core :refer :all]
+            [hoplon.core :refer :all]
+
+            [clojure.string :as cs]
+            [de.zalf.berest.client.hoplon.util :as util]
+            [de.zalf.berest.client.hoplon.state :as s]
+            [ui.user :as user]
+            [ui.elements :as uie]
+            [bootstrap-util :as bsu]
+            [hoplon.twitter.bootstrap :as bs]
+            [cljs-time.core :as cstc]
+            [cljs-time.format :as cstf]
+            [cljs-time.coerce :as cstcoe]))
+
+
+(defn vocab
+  "translatable vocabulary for this page"
+  [element lang]
+  (get-in {:new-user-filter-value {:lang/de "Neuer Nutzername"
+                                   :lang/en "New user name"}
+
+           :new-user-button {:lang/de "Neuer Nutzer"
+                             :lang/en "New user"}
+
+           :new-user-id-field-label {:lang/de "Nutzer-Id"
+                                     :lang/en "User id"}
+           :new-user-id-field-placeholder {:lang/de "Nutzer-Id"
+                                           :lang/en "User id"}
+
+           :new-user-pwd-field-label {:lang/de "Passwort"
+                                      :lang/en "Password"}
+           :new-user-pwd-field-placeholder {:lang/de "Passwort"
+                                            :lang/en "Password"}
+
+
+           :delete-user-button {:lang/de "Nutzer löschen"
+                                :lang/en "Delete user"}
+
+           :new-user-header {:lang/de "Neuen Nutzer anlegen"
+                             :lang/en "Create new user"}
+
+           :user-query-label {:lang/de "Nutzer-Suche"
+                              :lang/en "User-search"}
+           :user-query-placeholder {:lang/de "Achtung LEERE SUCHE!!"
+                                    :lang/en "Attention EMPTY SEARCH!!"}
+
+           :no-user-name-label {:lang/de "??? Nutzer ohne Name ???"
+                                :lang/en "??? User without name ???"}
+
+           :full-name-label {:lang/de "Voller Name"
+                             :lang/en "Full name"}
+           :full-name-placeholder {:lang/de "Voller Name des Nutzers"
+                                   :lang/en "Full Name of user"}
+
+           :show-data {:lang/de "Daten anzeigen"
+                       :lang/en "Show data"}
+
+           :show-user-details {:lang/de "Nutzer-Details anzeigen"
+                               :lang/en "Show detailed user data"}
+
+
+           :edit {:lang/de "Ändern"
+                  :lang/en "Edit"}
+           :save-edit {:lang/de "Änderungen speichern"
+                       :lang/en "Save changes"}
+           :chart-header {:lang/de "Wetterdaten"
+                          :lang/en "Weather data"}
+           :chart-subheader {:lang/de "Quelle: DWD Station"
+                             :lang/en "Source: DWD station"}
+
+           :set-climate-data-import-time-button {:lang/de "Klimadaten-Import-Zeit setzen"
+                                                 :lang/en "Set climate-data import time"}
+           :bulk-import-climate-data-button {:lang/de "DWD Klimadaten importieren"
+                                             :lang/en "Import DWD climate data"}
+           }
+          [element (or lang :lang/de)] "UNKNOWN element"))
+
+
+(defn admin-pane
+  []
+  (let [filter-criterium (cell "")
+        fc-count (cell= (count filter-criterium))
+        lc-filter-criterium (cell= (.toLowerCase filter-criterium))
+        fc-first-char (cell= (.charAt lc-filter-criterium 0))
+        filtered-users (cell= (if (> fc-count 0)
+                                (filter (fn [{name :user/full-name}]
+                                            (let [lc-name (.toLowerCase name)]
+                                                 (if (> fc-count 1)
+                                                   (> (.search lc-name lc-filter-criterium) -1)
+                                                   (= (.charAt lc-name 0) fc-first-char))))
+                                        (:users s/state))
+                                (:users s/state)))
+
+         edit-new-user? (cell false)
+         no-edit-new-user? (cell= (not edit-new-user?))
+
+         name (cell nil)
+         notes (cell nil)
+
+         new-user-id (cell "")
+         new-user-pwd (cell "")
+
+        new-hour (cell 11)
+        new-min (cell 0)
+
+        new-import-from (cell (cstf/unparse (cstf/formatters :date) (cstc/now)))
+        new-import-to (cell (cstf/unparse (cstf/formatters :date) (cstc/now)))
+
+        [users-id
+         new-user-id-field-id
+         new-user-pwd-field-id
+         user-query-id
+         hour-id min-id
+         import-from-id import-to-id] (repeatedly gensym)
+
+        ]
+
+    (div
+      :id "admin-pane"
+      :toggle (cell= (and s/admin-logged-in? (= s/route "#/admin")))
+
+      (div
+        :id users-id
+
+        (bs/form-horizontal
+
+          (bs/form-group
+            (div
+              :class "col-xs-offset-1 form-control-static"
+              :col {:xs 11}
+              (for [c (range 65 91)]
+                   (button
+                     :type "button"
+                     :class "btn btn-link"
+                     :click #(reset! filter-criterium (char c))
+                     (char c)))))
+
+          (bs/form-group
+            (bs/control-label :col {:xs 1} :for user-query-id (text "~(vocab :user-query-label s/lang)"))
+            (div
+              :col {:xs 11}
+              (input
+                :id user-query-id
+                :class "form-control"
+                :type "text"
+                :placeholder (cell= (vocab :user-query-placeholder s/lang))
+                :value filter-criterium
+                :change #(reset! filter-criterium @%)))))
+
+        (hr)
+
+        (div
+          (bsu/form-inline
+
+            (bs/form-group
+              (label :class "sr-only" :for new-user-id-field-id (text "~(vocab :new-user-id-field-label s/lang)"))
+              (input
+                :id new-user-id-field-id
+                :class "form-control"
+                :type "text"
+                :placeholder (cell= (vocab :new-user-id-field-placeholder s/lang))
+                :value new-user-id
+                :change #(reset! new-user-id @%)))
+
+            (bs/form-group
+              (label :class "sr-only" :for new-user-pwd-field-id (text "~(vocab :new-user-pwd-field-label s/lang)"))
+              (input
+                :id new-user-pwd-field-id
+                :class "form-control"
+                :type "password"
+                :placeholder (cell= (vocab :new-user-pwd-field-placeholder s/lang))
+                :value new-user-pwd
+                :change #(reset! new-user-pwd @%)))
+
+            (button
+              ;:toggle no-edit?
+              ;:style "float:right"
+              :class "btn btn-warning"
+              :click #(let [uid (cs/trim @new-user-id)
+                            pwd (cs/trim @new-user-pwd)]
+                           (when (and (seq uid) (seq pwd))
+                                 (s/create-new-user uid pwd)
+                                 (reset! filter-criterium uid)
+                                 (reset! new-user-id "")
+                                 (reset! new-user-pwd "")))
+              (text "~(vocab :new-user-button s/lang)"))))
+
+        (hr)
+
+        (div
+          (loop-tpl
+            :bindings [{user-db-id :db/id
+                        user-id :user/id
+                        full-name :user/full-name
+                        roles :user/roles
+                        user-farms :user/farms
+                        user-weather-stations :user/weather-stations
+                        :as user} (cell= (sort-by :user/name filtered-users))]
+            ;:bind-ids [farm-id]
+            (let [user-details-visible? (cell false)
+                  user-hover? (cell false)
+                  user-hover?2 (cell false)
+                  ]
+                 (div
+                   :mouseenter #(reset! user-hover? true)
+                   :mouseleave #(reset! user-hover? false)
+                   ;:hover #(swap! farm-hover? not)
+                   ;:class (cell= {:bg-info user-hover?})
+
+                   (h3
+                     ;:hover #(swap! user-hover?2 not)
+                     #_:click #_#(do
+                              (reset! user-hover? false)
+                              (reset! user-details-visible? true))
+                     (text "~(if full-name full-name (vocab :no-user-name-label s/lang))")
+                     (div
+                       (button
+                         :toggle user-hover?
+                         :style "float:right"
+                         :class "btn btn-danger"
+                         :click #(s/delete-db-entity @user-db-id)
+                         (text "~(vocab :delete-user-button s/lang)"))
+                       ))
+
+                   (span
+                     :class "glyphicon glyphicon-plus"
+                     :toggle (cell= (not user-details-visible?))
+                     :click #(reset! user-details-visible? true))
+                   (span
+                     :toggle user-details-visible?
+                     :class "glyphicon glyphicon-minus"
+                     :click #(reset! user-details-visible? false))
+                   (span (text " ~(vocab :show-user-details s/lang)"))
+
+                   (user/user
+                     :toggle user-details-visible?
+                     :fields {:id user-id
+
+                              :full-name full-name :full-name! #(s/update-db-entity @user-db-id :user/full-name %)
+
+                              :roles roles
+
+                              :weather-stations user-weather-stations
+
+                              :farms user-farms}
+                     :opts {:edit? true
+                            :label-cols 2
+                            :value-cols 3})
+                   ))))
+
+        (hr)
+
+        (div
+          (bsu/form-inline
+
+            (bs/form-group
+              :col {:xs 2}
+              (div
+                ;:col {:xs 1}
+                :class "input-group"
+                (input
+                  :id hour-id
+                  :class "form-control"
+                  :type "number"
+                  :step 1
+                  :min 1
+                  :max 24
+                  :value new-hour
+                  :change #(reset! new-hour (js/parseInt @%)))
+                (span :class "input-group-addon" "h")))
+
+            (bs/form-group
+              :col {:xs 2}
+              (div
+                ;:col {:xs 1}
+                :class "input-group"
+                (input
+                  :id min-id
+                  :class "form-control"
+                  :type "number"
+                  :step 1
+                  :min 0
+                  :max 59
+                  :value new-min
+                  :change #(reset! new-min (js/parseInt @%)))
+                (span :class "input-group-addon" "min")))
+
+            (button
+              ;:col {:xs 3}
+              :class "btn btn-warning"
+              :click #(s/set-climate-data-import-time @new-hour @new-min)
+              (text "~(vocab :set-climate-data-import-time-button s/lang)"))))
+
+        (hr)
+
+        (div
+          (bsu/form-inline
+
+            (bs/form-group
+              :col {:xs 2}
+              (div
+                :class "input-group"
+                (span :class "input-group-addon" "from")
+                (input
+                  :id import-from-id
+                  :class "form-control"
+                  :type "date"
+                  :value new-import-from
+                  :change #(reset! new-import-from @%))))
+
+            (bs/form-group
+              :col {:xs 2}
+              (div
+                :class "input-group"
+                (span :class "input-group-addon" "to")
+                (input
+                  :id import-to-id
+                  :class "form-control"
+                  :type "date"
+                  :value new-import-to
+                  :change #(reset! new-import-to @%))))
+
+            (button
+              ;:col {:xs 3}
+              :class "btn btn-warning"
+              :click #(s/bulk-import-dwd-data-into-datomic @new-import-from @new-import-to)
+              (text "~(vocab :bulk-import-climate-data-button s/lang)"))))))))

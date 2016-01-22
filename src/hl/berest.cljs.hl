@@ -1,0 +1,92 @@
+(page "index.html"
+      (:require
+        [de.zalf.berest.client.hoplon.state :as s]
+        [bootstrap-util :as bsu]
+        [hoplon.twitter.bootstrap :as bs]
+        [ui.components :as uic]
+        [ui.elements :as uie]
+        [ui.bersim :as bersim]
+        [ui.weather-stations :as weather-stations]
+        [ui.crops :as crops]
+        [ui.farms :as farms]
+        [ui.admin :as admin]
+        [clojure.string :as str]))
+
+(enable-console-print!)
+
+#_(println "hostname: " (-> js/window .-location .-hostname))
+
+(def server-url (condp = (-> js/window .-location .-hostname)
+                  "" "http://localhost:3000/"
+                  "localhost" "http://localhost:3000/"
+                  "http://env-7945450.jelastic.dogado.eu/"
+                  #_"https://berest-zalflsa.rhcloud.com/"))
+#_(println "server-url: " server-url)
+
+(defc edn-result nil)
+#_(cell= (println "edn-result: " edn-result))
+
+#_(s/login! "..." "...")
+
+(cell= (print (:trace s/error)))
+
+
+(defn vocab
+  "translatable vocabulary for this page"
+  [element lang]
+  (get-in {:page-name {:lang/de "IRRIGAMA.WEB"
+                       :lang/en "IRRIGAMA.WEB"}
+           :all-farms {:lang/de "Alle Betriebe"
+                       :lang/en "all farms"}
+           :dwd-weather-stations {:lang/de "DWD Wetterstationen"
+                                  :lang/en "DWD weather stations"}}
+          [element (or lang :lang/de)] "UNKNOWN element"))
+
+(html
+  (head
+    (html-meta
+      :name "viewport"
+      :content "width=device-width, initial-scale=1.0"
+      :charset "UTF-8")
+    #_(link :rel "stylesheet" :href "css/bootstrap.min.css")
+    (link :rel "stylesheet" :href "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" :integrity "sha256-7s5uDGW3AHqw6xtJmNNtr+OBRJUlgkNJEo78P4b0yRw= sha512-nNo+yCHEyn0smMxSswnf/OnX6/KwJuZTlNZBjauKhTK0c+zT+q5JOCx0UFhXQ6rJR9jg6Es8gPuD2uZcYDLqSw==" :crossorigin "anonymous")
+    #_(link :rel "stylesheet" :href "https://maxcdn.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" :crossorigin "anonymous")
+    #_(link :rel "stylesheet" :href "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")
+    #_(link :rel "stylesheet" :href "//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css")
+    #_(link :rel "stylesheet" :href "//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css")
+    #_(script :src "//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js")
+
+    #_(link :rel "stylesheet" :href "//cdnjs.cloudflare.com/ajax/libs/moment.js/2.6.0/moment.min.js")
+
+    (link :rel "stylesheet" :type "text/css" :href "css/hoplon-client.css")
+
+    #_(link :rel "stylesheet" :href "css/variance-base.css")
+    #_(link :rel "stylesheet" :href "css/charts.css")
+    )
+
+  (body
+    :style "padding-top: 86px"
+
+    (uic/top-nav-bar (cell= (vocab :page-name s/lang)))
+
+    (uic/error-pane)
+
+    (uic/loading-pane)
+
+    (uic/login-pane)
+
+    (div
+      :id "content-pane"
+      :toggle s/show-content?
+      :class "container"
+      :style "width:100%"
+
+      (admin/admin-pane)
+
+      (farms/farms-pane)
+
+      (weather-stations/weather-stations-pane)
+
+      (crops/crops-pane)
+
+      #_(bersim/bersim-pane))))

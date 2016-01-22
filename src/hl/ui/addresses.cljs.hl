@@ -1,0 +1,298 @@
+(ns ui.addresses
+  (:require-macros [javelin.core :refer :all]
+                   [hoplon.core :refer :all])
+  (:refer-hoplon :exclude [address])
+  (:require [javelin.core :refer :all]
+            [hoplon.core :refer :all]
+
+            [de.zalf.berest.client.hoplon.util :as util]
+            [de.zalf.berest.client.hoplon.state :as s]
+            [ui.elements :as uie]
+            [bootstrap-util :as bsu]
+            [hoplon.twitter.bootstrap :as bs]
+    #_[cljs-time.coerce :as cstcoe]))
+
+
+(defn vocab
+      "translatable vocabulary for this page"
+      [element lang]
+      (get-in {:new-farm {:lang/de "Neuer Betrieb ..."
+                          :lang/en "New farm ..."}
+               :save-new-farm {:lang/de "Neuen Betrieb speichern"
+                               :lang/en "Save new farm"}
+
+               :query-label {:lang/de "Suche"
+                             :lang/en "Search"}
+               :query-placeholder {:lang/de "Achtung LEERE SUCHE!! Alle Fruchtarten anzeigen kann lange dauern!!!"
+                                   :lang/en "Attention EMPTY SEARCH!! Showing all crops might take long!!!"}
+
+               :description-label {:lang/de "Beschreibung"
+                                   :lang/en "Description"}
+               :description-placeholder {:lang/de "Beschreibung der Adresse"
+                                         :lang/en "Description of address"}
+
+               :street-label {:lang/de "Strasse"
+                              :lang/en "Street"}
+               :street-placeholder {:lang/de "Name der Strasse"
+                                    :lang/en "Name of street"}
+
+               :postal-code-label {:lang/de "PLZ"
+                                   :lang/en "Postal code"}
+               :postal-code-placeholder {:lang/de "Postleitzahl"
+                                         :lang/en "Postal code"}
+
+               :city-label {:lang/de "Stadt"
+                            :lang/en "City"}
+               :city-placeholder {:lang/de "Name der Stadt"
+                                  :lang/en "Name of city"}
+
+               :city-part-label {:lang/de "Stadtteil"
+                                 :lang/en "City part"}
+               :city-part-placeholder {:lang/de "Name des Stadtteils"
+                                       :lang/en "Name of city part"}
+
+               :municipality-label {:lang/de "Landkreis"
+                                    :lang/en "Municipality"}
+               :municipality-placeholder {:lang/de "Name des Landkreises"
+                                          :lang/en "Name of municipality"}
+
+               :municipality-short-label {:lang/de "Landkreiskürzel"
+                                          :lang/en "Municipality symbol"}
+               :municipality-short-placeholder {:lang/de "Landkreiskürzel (z.B. MOL)"
+                                                :lang/en "Short symbol for municipality"}
+
+               :state-label {:lang/de "Bundesland"
+                             :lang/en "State"}
+               :state-placeholder {:lang/de "Name des Bundeslandes"
+                                   :lang/en "Name of state"}
+
+               :state-short-label {:lang/de "Bundesland-Kürzel"
+                                   :lang/en "State symbol "}
+               :state-short-placeholder {:lang/de "Kürzel des Bundeslandes"
+                                         :lang/en "Symbol of state"}
+
+               :country-label {:lang/de "Land"
+                               :lang/en "Country"}
+               :country-placeholder {:lang/de "Name des Landes"
+                                     :lang/en "Name of country"}
+
+               :country-short-label {:lang/de "Landeskürzel"
+                                     :lang/en "Country symbol"}
+               :country-short-placeholder {:lang/de "Name des Landes"
+                                           :lang/en "Symbol of country"}
+
+
+               :show-data {:lang/de "Daten anzeigen"
+                           :lang/en "Show data"}
+               :edit {:lang/de "Ändern"
+                      :lang/en "Edit"}
+               :save-edit {:lang/de "Änderungen speichern"
+                           :lang/en "Save changes"}
+               :chart-header {:lang/de "Wetterdaten"
+                              :lang/en "Weather data"}
+               :chart-subheader {:lang/de "Quelle: DWD Station"
+                                 :lang/en "Source: DWD station"}
+
+               :dc {:lang/de "BEREST DC Code"
+                    :lang/en "BEREST DC code"}
+
+               :cover-degree {:lang/de "Bedeckungsgrad"
+                              :lang/en "Cover degree"}
+
+               :extraction-depth {:lang/de "Entzugstiefe"
+                                  :lang/en "Extraction depth"}
+
+               :aet-pet {:lang/de "Quotient AET/PET"
+                         :lang/en "Quotient AET/PET"}
+
+               :transpiration-factor {:lang/de "Transpirations-Faktor"
+                                      :lang/en "Transpiration factor"}
+               }
+              [element (or lang :lang/de)] "UNKNOWN element"))
+
+
+(defelem
+  address
+  [{{:keys [description description!
+            street street!
+            postal-code postal-code!
+            city city!
+            city-part city-part!
+            municipality municipality!
+            municipality-short municipality-short!
+            state state!
+            state-short state-short!
+            country country!
+            country-short country-short!]} :fields
+    {:keys [edit? label-cols value-cols]} :opts
+    :as attrs}
+   kids]
+  (let [no-edit? (cell= (not edit?))
+        [address-form-name
+         description-id
+         street-id postal-code-id city-id city-part-id
+         municipality-id municipality-short-id
+         state-id state-short-id
+         country-id country-short-id] (repeatedly gensym)
+        ]
+       ((bs/form-horizontal
+          :name address-form-name
+
+          (bs/form-group
+            (bs/control-label :col {:sm label-cols} :for description-id (text "~(vocab :description-label s/lang)"))
+            (div
+              :col {:xs value-cols}
+              (p :toggle no-edit? :class "form-control-static" (text "~{description}"))
+              (input
+                :id description-id
+                :toggle edit?
+                :class "form-control"
+                :type "text"
+                :placeholder (cell= (vocab :description-placeholder s/lang))
+                :value description
+                :change #(description! @%))))
+
+          (bs/form-group
+            (bs/control-label :col {:sm label-cols} :for street-id (text "~(vocab :street-label s/lang)"))
+            (div
+              :col {:xs value-cols}
+              (p :toggle no-edit? :class "form-control-static" (text "~{street}"))
+              (input
+                :id street-id
+                :toggle edit?
+                :class "form-control"
+                :type "text"
+                :placeholder (cell= (vocab :street-placeholder s/lang))
+                :value street
+                :change #(street! @%))))
+
+          (bs/form-group
+            (bs/control-label :col {:sm label-cols} :for postal-code-id (text "~(vocab :postal-code-label s/lang)"))
+            (div
+              :col {:xs value-cols}
+              (p :toggle no-edit? :class "form-control-static" (text "~{postal-code}"))
+              (input
+                :id postal-code-id
+                :toggle edit?
+                :class "form-control"
+                :type "number"
+                :step 1
+                :min 9999
+                :max 100000
+                :placeholder (cell= (vocab :postal-code-placeholder s/lang))
+                :value postal-code
+                :change #(postal-code! @%))))
+
+          (bs/form-group
+            (bs/control-label :col {:sm label-cols} :for city-id (text "~(vocab :city-label s/lang)"))
+            (div
+              :col {:xs value-cols}
+              (p :toggle no-edit? :class "form-control-static" (text "~{city}"))
+              (input
+                :id city-id
+                :toggle edit?
+                :class "form-control"
+                :type "text"
+                :placeholder (cell= (vocab :city-placeholder s/lang))
+                :value city
+                :change #(city! @%))))
+
+          (bs/form-group
+            (bs/control-label :col {:sm label-cols} :for city-part-id (text "~(vocab :city-part-label s/lang)"))
+            (div
+              :col {:xs value-cols}
+              (p :toggle no-edit? :class "form-control-static" (text "~{city-part}"))
+              (input
+                :id city-part-id
+                :toggle edit?
+                :class "form-control"
+                :type "text"
+                :placeholder (cell= (vocab :city-part-placeholder s/lang))
+                :value city-part
+                :change #(city-part! @%))))
+
+          (bs/form-group
+            (bs/control-label :col {:sm label-cols} :for municipality-id (text "~(vocab :municipality-label s/lang)"))
+            (div
+              :col {:xs value-cols}
+              (p :toggle no-edit? :class "form-control-static" (text "~{municipality}"))
+              (input
+                :id municipality-id
+                :toggle edit?
+                :class "form-control"
+                :type "text"
+                :placeholder (cell= (vocab :municipality-placeholder s/lang))
+                :value municipality
+                :change #(municipality! @%))))
+
+          (bs/form-group
+            (bs/control-label :col {:sm label-cols} :for municipality-short-id (text "~(vocab :municipality-short-label s/lang)"))
+            (div
+              :col {:xs value-cols}
+              (p :toggle no-edit? :class "form-control-static" (text "~{municipality-short}"))
+              (input
+                :id municipality-short-id
+                :toggle edit?
+                :class "form-control"
+                :type "text"
+                :placeholder (cell= (vocab :municipality-short-placeholder s/lang))
+                :value municipality-short
+                :change #(municipality-short! @%))))
+
+          (bs/form-group
+            (bs/control-label :col {:sm label-cols} :for state-id (text "~(vocab :state-label s/lang)"))
+            (div
+              :col {:xs value-cols}
+              (p :toggle no-edit? :class "form-control-static" (text "~{state}"))
+              (input
+                :id state-id
+                :toggle edit?
+                :class "form-control"
+                :type "text"
+                :placeholder (cell= (vocab :state-placeholder s/lang))
+                :value state
+                :change #(state! @%))))
+
+          (bs/form-group
+            (bs/control-label :col {:sm label-cols} :for state-short-id (text "~(vocab :state-short-label s/lang)"))
+            (div
+              :col {:xs value-cols}
+              (p :toggle no-edit? :class "form-control-static" (text "~{state-short}"))
+              (input
+                :id state-short-id
+                :toggle edit?
+                :class "form-control"
+                :type "text"
+                :placeholder (cell= (vocab :state-short-placeholder s/lang))
+                :value state-short
+                :change #(state-short! @%))))
+
+          (bs/form-group
+            (bs/control-label :col {:sm label-cols} :for country-id (text "~(vocab :country-label s/lang)"))
+            (div
+              :col {:xs value-cols}
+              (p :toggle no-edit? :class "form-control-static" (text "~{country}"))
+              (input
+                :id country-id
+                :toggle edit?
+                :class "form-control"
+                :type "text"
+                :placeholder (cell= (vocab :country-placeholder s/lang))
+                :value country
+                :change #(country! @%))))
+
+          (bs/form-group
+            (bs/control-label :col {:sm label-cols} :for country-short-id (text "~(vocab :country-short-label s/lang)"))
+            (div
+              :col {:xs value-cols}
+              (p :toggle no-edit? :class "form-control-static" (text "~{country}"))
+              (input
+                :id country-short-id
+                :toggle edit?
+                :class "form-control"
+                :type "text"
+                :placeholder (cell= (vocab :country-short-placeholder s/lang))
+                :value country-short
+                :change #(country-short! @%))))
+
+          ) (dissoc attrs :fields :opts) kids)))

@@ -1,0 +1,331 @@
+(ns ui.technology
+  (:require [de.zalf.berest.client.hoplon.util :as util]
+            [ui.elements :as uie]
+            [ui.addresses :as addr]
+            [bootstrap-util :as bsu]
+            [hoplon.twitter.bootstrap :as bs]
+            [cljs-time.core :as cstc]
+            [cljs-time.format :as cstf]
+            [cljs-time.coerce :as cstcoe]
+            [de.zalf.berest.client.hoplon.state :as s]))
+
+
+(defn vocab
+  "translatable vocabulary for this page"
+  [element lang]
+  (get-in {:cycle-days-label {:lang/de "Turnuszeitraum"
+                        :lang/en "Cycle days"}
+           :cycle-days-placeholder {:lang/de "Turnuszeitraum"
+                              :lang/en "Cycle days"}
+
+           :outlet-height-label {:lang/de "Ausbring-Höhe/Tiefe"
+                                 :lang/en "Outlet height/depth"}
+           :outlet-height-placeholder {:lang/de "Ausbring-Höhe/Tiefe"
+                                       :lang/en "Outlet height/depth"}
+
+           :sprinkle-loss-factor-label {:lang/de "Faktor Sprühverluste"
+                                        :lang/en "Sprinkle-loss factor"}
+           :sprinkle-loss-factor-placeholder {:lang/de "Ausbring-Höhe/Tiefe"
+                                              :lang/en "Outlet height/depth"}
+
+           :type-label {:lang/de "Bewässerungstyp"
+                                 :lang/en "Irrigation type"}
+           :type-placeholder {:lang/de "Bewässerungstyp"
+                              :lang/en "Irrigation type"}
+
+           :donation-min-label {:lang/de "Minimale Gabe"
+                        :lang/en "Minimal donation"}
+           :donation-min-placeholder {:lang/de "Minimale Gabe"
+                              :lang/en "Minimal donation"}
+
+           :donation-max-label {:lang/de "Maximale Gabe"
+                        :lang/en "Maximal donation"}
+           :donation-max-placeholder {:lang/de "Minimale Gabe"
+                              :lang/en "Maximal donation"}
+
+           :donation-opt-label {:lang/de "Optimale Gabe"
+                        :lang/en "Optimal donation"}
+           :donation-opt-placeholder {:lang/de "Optimale Gabe"
+                              :lang/en "Optimal donation"}
+
+           :step-size-label {:lang/de "Gabenschrittweite"
+                                :lang/en "Donation step size"}
+           :step-size-placeholder {:lang/de "Gabenschrittweite"
+                                      :lang/en "Donation step size"}
+
+           :technology-type-fieldset-label {:lang/de "Spezifikation des Technologietypes"
+                                            :lang/en "Spedification of technology type"}
+
+           :technology-parameters-fieldset-label {:lang/de "Parametrisierung des Technologietypes"
+                                            :lang/en "Parameters of technology type"}
+
+           :initial-sm-unit-label {:lang/de "Bodenfeuchte Einheit"
+                                       :lang/en "Soil moisture unit"}
+
+           :drip {:lang/de "Tröpfchenbewässerung"
+                 :lang/en "Drip irrigation"}
+
+           :sprinkler {:lang/de "Beregnung"
+                 :lang/en "Sprinkler irrigation"}
+
+
+           :donations-fieldset-label {:lang/de "Bewässerungsdaten"
+                                      :lang/en "Irrigation data"}
+
+           :donations-label {:lang/de "Bewässerungsgaben"
+                             :lang/en "Irrigation donations"}
+
+
+           :show-data {:lang/de "Daten anzeigen"
+                       :lang/en "Show data"}
+
+           :edit-technology-button-label {:lang/de "Ändern"
+                                      :lang/en "Edit"}
+
+           :add-layer-label {:lang/de "Schicht hinzufügen"
+                             :lang/en "Add layer"}
+           :remove-layer-label {:lang/de "Schicht entfernen"
+                                :lang/en "Remove layer"}
+           :depth-placeholder {:lang/de "Tiefe [cm]"
+                               :lang/en "Depth [cm]"}
+           :value-placeholder {:lang/de "Wert"
+                               :lang/en "Value"}
+
+
+           :chart-header {:lang/de "Wetterdaten"
+                          :lang/en "Weather data"}
+           :chart-subheader {:lang/de "Quelle: DWD Station"
+                             :lang/en "Source: DWD station"}
+
+           :dc {:lang/de "BEREST DC Code"
+                :lang/en "BEREST DC code"}
+
+           :cover-degree {:lang/de "Bedeckungsgrad"
+                          :lang/en "Cover degree"}
+
+           :extraction-depth {:lang/de "Entzugstiefe"
+                              :lang/en "Extraction depth"}
+
+           :aet-pet {:lang/de "Quotient AET/PET"
+                     :lang/en "Quotient AET/PET"}
+
+           :transpiration-factor {:lang/de "Transpirations-Faktor"
+                                  :lang/en "Transpiration factor"}
+           }
+          [element (or lang :lang/de)] "UNKNOWN element"))
+
+
+(defelem
+  technology
+  [{{:keys [db-id
+            cycle-days cycle-days!
+            outlet-height outlet-height!
+            sprinkle-loss-factor sprinkle-loss-factor!
+            type type!
+            donation-min donation-min!
+            donation-max donation-max!
+            donation-opt donation-opt!
+            step-size step-size!]} :fields
+    {:keys [edit? label-cols value-cols]} :opts
+    :as attrs}
+   kids]
+  (let [edit? (cell (if (cell? edit?) @edit? edit?))
+        no-edit? (cell= (not edit?))
+        drip-irrigation? (cell= (= type :technology.type/drip))
+        [cycle-days-id
+         outlet-height-id
+         sprinkle-loss-factor-id
+         type-id
+         donation-min-id
+         donation-max-id
+         donation-opt-id
+         step-size-id
+         technology-form-name] (repeatedly gensym)]
+    ((div
+       (bs/form-horizontal
+         :name technology-form-name
+
+         #_(button
+           :style "float:right"
+           :class "btn btn-info"
+           :click #(swap! edit? not)
+           (text "~(vocab :edit-technology-button-label s/lang)"))
+
+         (fieldset
+           :style "font-size: 18px; margin-left: 5%; width:95%"
+           (legend (text "~(vocab :technology-type-fieldset-label s/lang)"))
+
+           (bs/form-group
+             :toggle edit? ;we don't have to show this for read-only mode
+             (bs/control-label :col {:sm (+ 1 label-cols)} :for type-id
+                               (text "~(vocab :type-label s/lang)"))
+             (div
+               :col {:xs 2}
+               (select
+                 :id type-id
+                 :class "form-control"
+                 :change #(type! (keyword @%))
+                 (option :value "technology.type/drip"
+                         :selected (cell= (= type :technology.type/drip))
+                         (text "~(vocab :drip s/lang)"))
+                 (option :value "technology.type/sprinkler"
+                         :selected (cell= (= type :technology.type/sprinkler))
+                         (text "~(vocab :sprinkler s/lang)"))
+
+                 )))
+
+           (bs/form-group
+             (bs/control-label :col {:sm (+ 1 label-cols)} :for outlet-height-id (text "~(vocab :outlet-height-label s/lang)"))
+             (div
+               :col {:xs value-cols}
+               (p :toggle no-edit? :class "form-control-static" (text "~{outlet-height}"))
+               (div
+                 :class "input-group"
+                 (input
+                   :id outlet-height-id
+                   :toggle edit?
+                   :class "form-control"
+                   :type "number"
+                   :step 1
+                   :min -200
+                   :max 500
+                   :placeholder (cell= (vocab :outlet-height-placeholder s/lang))
+                   :value outlet-height
+                   :change #(outlet-height! (js/parseInt @%)))
+                 (span :class "input-group-addon" "cm"))))
+
+           (bs/form-group
+             (bs/control-label :col {:sm (+ 1 label-cols)} :for sprinkle-loss-factor-id (text "~(vocab :sprinkle-loss-factor-label s/lang)"))
+             (div
+               :col {:xs value-cols}
+               (div
+                 :class "input-group"
+                 (p :toggle no-edit? :class "form-control-static" (text "~{sprinkle-loss-factor}"))
+                 (input
+                   :id sprinkle-loss-factor-id
+                   :disabled drip-irrigation?
+                   :toggle edit?
+                   :class "form-control"
+                   :type "number"
+                   :step 1
+                   :min 0
+                   :max 100
+                   :placeholder (cell= (vocab :sprinkle-loss-factor-placeholder s/lang))
+                   :value (cell= (if drip-irrigation?
+                                   0
+                                   (* (or sprinkle-loss-factor 0.2) 100)))
+                   :change #(sprinkle-loss-factor! (/ (js/parseInt @%) 100.0)))
+                 (span :class "input-group-addon" "%"))))
+
+           (bs/form-group
+             (bs/control-label :col {:sm (+ 1 label-cols)} :for cycle-days-id (text "~(vocab :cycle-days-label s/lang)"))
+             (div
+               :col {:xs value-cols}
+               (p :toggle no-edit? :class "form-control-static" (text "~{cycle-days}"))
+               (div
+                 :class "input-group"
+                 (input
+                   :id cycle-days-id
+                   :toggle edit?
+                   :class "form-control"
+                   :type "number"
+                   :step 1
+                   :min 1
+                   :max 14
+                   :placeholder (cell= (vocab :cycle-days-placeholder s/lang))
+                   :value cycle-days
+                   :change #(cycle-days! (js/parseInt @%)))
+                 (span :class "input-group-addon" "d"))
+               )))
+
+
+
+         (fieldset
+           :style "font-size: 18px; margin-left: 5%; width:95%"
+           (legend (text "~(vocab :technology-parameters-fieldset-label s/lang)"))
+
+           (bs/form-group
+             (bs/control-label :col {:sm (+ 1 label-cols)} :for donation-min-id (text "~(vocab :donation-min-label s/lang)"))
+             (div
+               :col {:xs value-cols}
+               (p :toggle no-edit? :class "form-control-static" (text "~{donation-min}"))
+               (div
+                 :class "input-group"
+                 (input
+                   :id donation-min-id
+                   :toggle edit?
+                   :class "form-control"
+                   :type "number"
+                   :step 0.1
+                   :min 1
+                   :max 100
+                   :placeholder (cell= (vocab :donation-min-placeholder s/lang))
+                   :value donation-min
+                   :change #(donation-min! (js/parseInt @%)))
+                 (span :class "input-group-addon" "mm"))
+               ))
+
+           (bs/form-group
+             (bs/control-label :col {:sm (+ 1 label-cols)} :for donation-opt-id (text "~(vocab :donation-opt-label s/lang)"))
+             (div
+               :col {:xs value-cols}
+               (p :toggle no-edit? :class "form-control-static" (text "~{donation-opt}"))
+               (div
+                 :class "input-group"
+                 (input
+                   :id donation-opt-id
+                   :toggle edit?
+                   :class "form-control"
+                   :type "number"
+                   :step 0.1
+                   :min 1
+                   :max 100
+                   :placeholder (cell= (vocab :donation-opt-placeholder s/lang))
+                   :value donation-opt
+                   :change #(donation-opt! (js/parseInt @%)))
+                 (span :class "input-group-addon" "mm"))
+               ))
+
+           (bs/form-group
+             (bs/control-label :col {:sm (+ 1 label-cols)} :for donation-max-id (text "~(vocab :donation-max-label s/lang)"))
+             (div
+               :col {:xs value-cols}
+               (p :toggle no-edit? :class "form-control-static" (text "~{donation-max}"))
+               (div
+                 :class "input-group"
+                 (input
+                   :id donation-max-id
+                   :toggle edit?
+                   :class "form-control"
+                   :type "number"
+                   :step 0.1
+                   :min 1
+                   :max 100
+                   :placeholder (cell= (vocab :donation-max-placeholder s/lang))
+                   :value donation-max
+                   :change #(donation-max! (js/parseInt @%)))
+                 (span :class "input-group-addon" "mm"))
+               ))
+
+           (bs/form-group
+             (bs/control-label :col {:sm (+ 1 label-cols)} :for step-size-id (text "~(vocab :step-size-label s/lang)"))
+             (div
+               :col {:xs value-cols}
+               (p :toggle no-edit? :class "form-control-static" (text "~{step-size}"))
+               (div
+                 :class "input-group"
+                 (input
+                   :id step-size-id
+                   :toggle edit?
+                   :class "form-control"
+                   :type "number"
+                   :step 0.1
+                   :min 1
+                   :max 50
+                   :placeholder (cell= (vocab :step-size-placeholder s/lang))
+                   :value step-size
+                   :change #(step-size! (js/parseInt @%)))
+                 (span :class "input-group-addon" "mm"))
+               ))
+           )
+         )) (dissoc attrs :fields :opts) kids)))

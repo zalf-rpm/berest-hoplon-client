@@ -1,0 +1,163 @@
+(ns ui.bersim
+  (:require-macros [javelin.core :refer :all]
+                   [hoplon.core :refer :all])
+  (:require [javelin.core :refer :all]
+            [hoplon.core :refer :all]
+            [de.zalf.berest.client.hoplon.util :as util]
+            [de.zalf.berest.client.hoplon.state :as s]
+            [ui.elements :as uie]
+            [bootstrap-util :as bsu]
+            [hoplon.twitter.bootstrap :as bs]))
+
+(defn vocab
+  "translatable vocabulary for this page"
+  [element lang]
+  (get-in {:signed-in-as {:lang/de "Eingeloggt als "
+                          :lang/en "Signed in as "}
+           :username {:lang/de "Nutzername"
+                      :lang/en "Username"}
+           :password {:lang/de "Passwort"
+                      :lang/en "Password"}}
+          [element (or lang :lang/de)] "UNKNOWN element"))
+
+(defn selected-farm-id
+  []
+  )
+
+
+(defn bersim-pane
+  []
+  (let [[farm-id plot-id until-date-id] (repeatedly gensym)
+        selected-farm-id* (cell nil)
+        selected-farm (cell= (if selected-farm-id*
+                               (get s/farms selected-farm-id*)
+                               (-> s/farms first second)))
+
+        selected-plot-id* (cell nil)
+        plots (cell= (:plots selected-farm))
+        selected-plot (cell= (if selected-plot-id*
+                               (get plots selected-plot-id*)
+                               (-> plots first second)))
+        selected-plot-id (cell= (:plot/id selected-plot))
+
+        until-date (cell #inst "1993-09-30")
+
+        donations (cell [{:day 1 :month 4 :amount 22}
+                         {:day 2 :month 5 :amount 10}
+                         {:day 11 :month 7 :amount 30}])
+        ;_ (cell= (println "donations: " (pr-str donations)))
+
+        temp-donations (cell {:day nil :month nil :amount nil})
+        ;_ (cell= (println "temp-donations: " (pr-str temp-donations)))
+
+        remove-donation-row! (fn [row-no]
+                              (reset! donations (->> @donations
+                                                     (keep-indexed #(when-not (= %1 row-no) %2) ,,,)
+                                                     (into [] ,,,))))
+
+        add-donation-row! #(when (not-any? nil? (map second @temp-donations))
+                            (swap! donations conj @temp-donations)
+                            (reset! temp-donations {:day nil :month nil :amount nil}))]
+
+
+    (div
+      :id "bersim-pane"
+      :toggle (cell= (and s/show-content? (= s/route "#/bersim")))
+
+      (bs/form-horizontal
+        :name "test-data-form"
+
+        (bs/form-group
+          (bs/control-label :col {:sm 2} :for "farm-id" "Betrieb")
+          (div
+            :col {:xs 3}
+            (select
+              :id farm-id
+              :class "form-control"
+              :change #(reset! selected-farm-id* @%)
+              (loop-tpl :bindings [[_ {fid :farm/id
+                                       name :farm/name}] s/farms]
+                        (uie/create-option fid (:farm/id @selected-farm) name)))))
+
+        (bs/form-group
+          (bs/control-label :col {:sm 2} :for "plot" "Schlag")
+          (div
+            :col {:xs 3}
+            (select
+              :id plot-id
+              :class "form-control"
+              :change #(reset! selected-plot-id* @%)
+              (loop-tpl
+                :bindings [[_ {pid :plot/id
+                               name :plot/name}] plots]
+                (uie/create-option pid (:plot/id @selected-plot) name)))))
+
+
+        (bs/form-group
+          (bs/control-label :col {:sm 2} :for "until-day" "Rechnen bis Datum")
+          (div
+            :col {:xs 2}
+            (input
+              :id until-date-id
+              :class "form-control"
+              :type "date"
+              :placeholder "Datum"
+              :value (cell= (util/js-date-time->date-str until-date))
+              :change #(reset! until-date (js/Date. @%)))))
+
+
+        (fieldset
+          (legend "Beregnungsdaten")
+          (bs/form-group
+            (let [[day* month* amount*] (cell-map (fn [[_ v]] v) temp-donations)
+                  set-x! (fn [x]
+                           (fn [row-no value]
+                             (swap! donations assoc-in [row-no x] value)))
+                  set-x!* (fn [x]
+                            (fn [_ value]
+                              (swap! temp-donations assoc x value)))]
+              (div
+                :id "donations-and-template"
+                (div
+                  :id "donations"
+                  (loop-tpl
+                    :bindings [[row-no {:keys [day month amount]}] (cell= (util/indexed donations))]
+                    (uie/create-irrigation-inputs row-no remove-donation-row!
+                                                  day (set-x! :day)
+                                                  month (set-x! :month)
+                                                  amount (set-x! :amount))))
+                (uie/create-irrigation-inputs nil add-donation-row!
+                                              day* (set-x!* :day)
+                                              month* (set-x!* :month)
+                                              amount* (set-x!* :amount))))))
+
+        (hr)
+
+        (bs/form-group
+          (bs/control-label
+            :col {:sm 4}
+            :for "result"
+            (input
+              :class "btn btn-primary btn-lg"
+              :type "button"
+              :click #(s/calculate-csv @selected-plot-id @until-date @donations)
+              :value "Berechnen & CSV")
+            (div :css {:height "5px"})
+            (input
+              :class "btn btn-primary btn-lg"
+              :type "button"
+              :click #(s/simulate-csv @selected-plot-id @until-date @donations)
+              :value "Simulieren & CSV")
+            (div :css {:height "5px"})
+            (a
+              :class "btn btn-primary btn-lg"
+              :href "https://dl.dropboxusercontent.com/u/29574974/Weberest/output-analysis.xlsx"
+              "Analyse Excel-File herunterladen"))
+          (div
+            :col {:xs 8}
+            (textarea
+              :id "result"
+              :class "form-control"
+              :rows "20" ;:cols "150"
+              :placeholder "Berechnungsergebnis wird hier angezeigt werden ..."
+              :value (cell= s/csv-result))))))))

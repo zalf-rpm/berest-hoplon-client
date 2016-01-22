@@ -1,0 +1,1130 @@
+(ns ui.elements
+  (:require
+    [hoplon.core :refer :all]
+    [cljs-time.core :as cstc]
+    [cljs-time.format :as cstf]
+    [cljs-time.coerce :as cstcoe]
+    [bootstrap-util :as bsu]
+    [hoplon.twitter.bootstrap :as bs]
+    [de.zalf.berest.client.hoplon.util :as util]
+    [de.zalf.berest.client.hoplon.state :as s]))
+
+
+(defn vocab
+  "translatable vocabulary for this page"
+  [element lang]
+  (get-in {:add-layer-label {:lang/de "Schicht hinzufügen"
+                             :lang/en "Add layer"}
+           :remove-layer-label {:lang/de "Schicht entfernen"
+                                :lang/en "Remove layer"}
+           :add-donation-label {:lang/de "Gabe hinzufügen"
+                             :lang/en "Add donation"}
+           :remove-donation-label {:lang/de "Gabe entfernen"
+                                :lang/en "Remove donation"}
+           :depth-placeholder {:lang/de "Tiefe"
+                               :lang/en "Depth"}
+           :value-placeholder {:lang/de "Wert"
+                               :lang/en "Value"}
+           :abs-day-placeholder {:lang/de "Datum der Wassergabe"
+                                 :lang/en "Date of donation"}
+           :amount-placeholder {:lang/de "Menge der Gabe"
+                               :lang/en "Amount of donation"}
+           :dc-placeholder {:lang/de "DC"
+                            :lang/en "DC"}
+           :add-dc-assertion-label {:lang/de "DC Stadium hinzufügen"
+                                    :lang/en "Add DC assertion"}
+           :remove-dc-assertion-label {:lang/de "DC Stadium entfernen"
+                                       :lang/en "Remove DC assertion"}
+
+           :crop-name-placeholder {:lang/de "Name"
+                                   :lang/en "Name"}
+           :add-crop-dc-to-name-label {:lang/de "DC->Name hinzufügen"
+                                    :lang/en "Add DC->name"}
+           :remove-crop-dc-to-name-label {:lang/de "DC->Name entfernen"
+                                       :lang/en "Remove DC->name"}
+
+           :crop-rel-dc-day-placeholder {:lang/de "rel. Tag"
+                                         :lang/en "rel. day"}
+           :add-crop-dc-to-rel-dc-day-label {:lang/de "DC->rel. Tag hinzufügen"
+                                          :lang/en "Add DC->rel. day"}
+           :remove-crop-dc-to-rel-dc-day-label {:lang/de "DC->rel. Tag entfernen"
+                                             :lang/en "Remove DC->rel. day"}
+
+           :crop-cover-degree-placeholder {:lang/de "Bedeckungsgrad"
+                                           :lang/en "Cover degree"}
+           :add-crop-rel-dc-day-to-cover-degree-label {:lang/de "rel.Tag->Bedeckungsgrad hinzufügen"
+                                                       :lang/en "Add rel.day->cover degree"}
+           :remove-crop-rel-dc-day-to-cover-degree-label {:lang/de "rel.Tag->Bedeckungsgrad entfernen"
+                                                  :lang/en "Remove rel.day->cover degree"}
+
+           :crop-aet7pet-placeholder {:lang/de "AET/PET"
+                                      :lang/en "AET/PET"}
+           :add-crop-rel-dc-day-to-aet7pet-label {:lang/de "rel.Tag->AET/PET hinzufügen"
+                                                  :lang/en "Add rel.day->AET/PET"}
+           :remove-crop-rel-dc-day-to-aet7pet-label {:lang/de "rel.Tag->AET/PET entfernen"
+                                                  :lang/en "Remove rel.day->AET/PET"}
+
+           :crop-extraction-depth-placeholder {:lang/de "Entzugstiefe"
+                                               :lang/en "Extraction depth"}
+           :add-crop-rel-dc-day-to-extraction-depth-label {:lang/de "rel.Tag->Entzugstiefe hinzufügen"
+                                                           :lang/en "Add rel.day->extraction depth"}
+           :remove-crop-rel-dc-day-to-extraction-depth-label {:lang/de "rel.Tag->Entzugstiefe entfernen"
+                                                              :lang/en "Remove rel.day->extraction depth"}
+
+           :crop-transpiration-factor-placeholder {:lang/de "Transpirationsfaktor"
+                                               :lang/en "Transpiration factor"}
+           :add-crop-rel-dc-day-to-transpiration-factor-label {:lang/de "rel.Tag->Transpirationsfaktor hinzufügen"
+                                                           :lang/en "Add rel.day->Transpiration factor"}
+           :remove-crop-rel-dc-day-to-transpiration-factor-label {:lang/de "rel.Tag->Transpirationsfaktor entfernen"
+                                                              :lang/en "Remove rel.day->Transpiration factor"}
+
+           :com-con-id-placeholder {:lang/de "Nummer/Id"
+                                    :lang/en "Number/Id"}
+           :com-con-desc-placeholder {:lang/de "Hinweis: z.B. Privat/Arbeit"
+                                      :lang/en "Note: e.g. private/work"}
+           :add-com-con-label {:lang/de "Verbindung hinzufügen"
+                               :lang/en "Add connection"}
+           :remove-com-con-label {:lang/de "Verbindung entfernen"
+                                  :lang/en "Remove connection"}
+           :com-con-mobile-phone-label {:lang/de "Handy"
+                                        :lang/en "Mobile"}
+           :com-con-fixed-phone-label {:lang/de "Festnetz"
+                                       :lang/en "Fixed-line"}
+           :com-con-fax-label {:lang/de "Fax"
+                               :lang/en "Fax"}
+           :com-con-skype-label {:lang/de "Skype"
+                                 :lang/en "Skype"}
+           :com-con-email-label {:lang/de "E-Mail"
+                                 :lang/en "Email"}
+           :com-con-instant-messaging-label {:lang/de "Instant-Messaging"
+                                             :lang/en "Instant messaging"}
+           :com-con-mobile-uri-label {:lang/de "URL"
+                                      :lang/en "URL"}
+
+           :date-placeholder {:lang/de "Datum"
+                              :lang/en "Date"}
+           :tavg-placeholder {:lang/de "Tmit"
+                              :lang/en "Tavg"}
+           :globrad-placeholder {:lang/de "Globalstrahlung"
+                                 :lang/en "Global radiation"}
+           :evap-placeholder {:lang/de "Verdunstung"
+                             :lang/en "Evaporation"}
+           :precip-placeholder {:lang/de "Niederschlag"
+                                :lang/en "Precipitation"}
+           :prog?-label {:lang/de "Prognose?"
+                         :lang/en "Prognosis?"}
+           :remove-weather-data-label {:lang/de "Entfernen"
+                                       :lang/en "Remove"}
+           :add-weather-data-label {:lang/de "Hinzufügen"
+                                    :lang/en "Add"}
+           :weather-data-label {:lang/de "Datensätze"
+                                :lang/en "Datasets"}
+
+           }
+          [element (or lang :lang/de)] "UNKNOWN element"))
+
+
+
+(defmethod hoplon.core/do! :selected
+           [elem key value]
+           (let [e (js/jQuery elem)
+                 k (name key)]
+                (cond
+                  (= false value) (.removeAttr e k)
+                  (= true value) (.attr e k k)
+                  :else (.attr e k (str value)))))
+
+(defmethod hoplon.core/do! :disabled
+           [elem key value]
+           (let [e (js/jQuery elem)
+                 k (name key)]
+                (cond
+                  (= false value) (.removeAttr e k)
+                  (= true value) (.attr e k k)
+                  :else (.attr e k (str value)))))
+
+#_(defmethod hoplon.core/do! :checked
+           [elem key value]
+           (let [e (js/jQuery elem)
+                 k (name key)]
+                (cond
+                  (= false value) (.removeAttr e k)
+                  (= true value) (.attr e k k)
+                  :else (.attr e k (str value)))))
+
+(defn create-option
+  [value selected-value & [display-value]]
+  (option :value value
+          :selected (cell= (= value selected-value))
+          (text "~(or display-value value)")))
+
+
+
+(defn create-irrigation-inputs
+  [row-no add-or-remove-row!
+   day set-day!
+   month set-month!
+   amount set-amount!]
+  (div
+    (div
+      :class "col-xs-2"
+      (input
+        :class "form-control"
+        :type "number"
+        :placeholder "Tag"
+        :value day
+        :change #(set-day! (some-> row-no deref) (js/parseInt @%))))
+    (div
+      :class "col-xs-2"
+      (input
+        :class "form-control"
+        :type "number"
+        :placeholder "Monat"
+        :value month
+        :change #(set-month! (some-> row-no deref) (js/parseInt @%))))
+    (div
+      :class "col-xs-2"
+      (input
+        :class "form-control"
+        :type "number"
+        :placeholder "Menge [mm]"
+        :value amount
+        :change #(set-amount! (some-> row-no deref) (js/parseInt @%))))
+
+    (input
+      :class "btn btn-default"
+      :type "button"
+      :value (if row-no "Zeile entfernen" "Zeile hinzufügen")
+      :click #(add-or-remove-row! (some-> row-no deref)))))
+
+
+(defelem
+  create-ka5-inputs
+  [{{:keys [row-no row-action!
+            depth depth!
+            value value!]} :fields
+    opts :opts
+    :as attrs} kids]
+
+  (let [[depth-id value-id] (repeatedly gensym)]
+    ((div
+       :class "row"
+       (div
+         :col {:xs 4}
+         (div
+           :class "input-group"
+           (input
+             :id depth-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :depth-placeholder s/lang))
+             :step 1
+             :min 0
+             :max 200
+             :value depth
+             :change #(depth! (js/parseInt @%)))
+           (span :class "input-group-addon" "cm")))
+
+       (div
+         :col {:xs 3}
+         (select
+           :id value-id
+           :class "form-control"
+           :change #(value! @%)
+           (option "")
+           (loop-tpl
+             :bindings [[name _] (cell= (sort-by first s/ka5-soil-types))]
+             (option :value name
+                     :selected (cell= (= name value))
+                     (text "~{name}")))))
+
+       (div
+         :col {:xs 4}
+         (button
+           :class (cell= {:btn true
+                          :btn-sm true
+                          :btn-danger (not (nil? row-no))
+                          :btn-warning (nil? row-no)})
+           ;:type "button"
+           ;:value (cell= (if row-no (vocab :remove-layer-label s/lang) (vocab :add-layer-label s/lang)))
+           :click #(row-action! (some-> row-no deref))
+           (span :class (cell= {:glyphicon true
+                                :glyphicon-trash (not (nil? row-no))
+                                :glyphicon-plus (nil? row-no)})))))
+     (dissoc attrs :fields :opts) kids)))
+
+
+(defelem
+  create-soil-data-inputs
+  [{{:keys [row-no row-action!
+            unit
+            depth depth!
+            value value!]} :fields
+    opts :opts
+    :as attrs} kids]
+
+  (let [[depth-id value-id] (repeatedly gensym)]
+    ((div
+       :class "row"
+       (div
+         :col {:xs 4}
+         (div
+           :class "input-group"
+           (input
+             :id depth-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :depth-placeholder s/lang))
+             :step 1
+             :min 0
+             :max 200
+             :value depth
+             :change #(depth! (js/parseInt @%)))
+           (span :class "input-group-addon" "cm")))
+
+       (div
+         :col {:xs 4}
+         (div
+           :class "input-group"
+           (input
+             :id value-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :value-placeholder s/lang))
+             :step 0.1
+             :min 0
+             :value value
+             :change #(value! (js/parseFloat @%)))
+           (span :class "input-group-addon" (text "~{unit}"))))
+
+       (div
+         :col {:xs 4}
+         (button
+           :class (cell= {:btn true
+                          :btn-sm true
+                          :btn-danger (not (nil? row-no))
+                          :btn-warning (nil? row-no)})
+           ;:type "button"
+           ;:value (cell= (if row-no (vocab :remove-layer-label s/lang) (vocab :add-layer-label s/lang)))
+           :click #(row-action! (some-> row-no deref))
+           (span :class (cell= {:glyphicon true
+                                :glyphicon-trash (not (nil? row-no))
+                                :glyphicon-plus (nil? row-no)})))))
+     (dissoc attrs :fields :opts) kids)))
+
+
+(defelem
+  create-donation-inputs
+  [{{:keys [row-no row-action!
+            year
+            abs-start-day abs-start-day!
+            abs-end-day abs-end-day!
+            amount amount!]} :fields
+    opts :opts
+    :as attrs} kids]
+
+  (let [year* (cell= (or year (cstc/year (cstc/now))))
+        [abs-start-day-id abs-end-day-id amount-id] (repeatedly gensym)]
+    ((div
+       :class "row"
+       (div
+         :col {:xs 4}
+         (div
+           :class "input-group"
+           (span :class "input-group-addon" "von")
+           (input
+             :id abs-start-day-id
+             :class "form-control"
+             :type "date"
+             :value (cell= (if (and abs-start-day year*)
+                             (util/cljs-time-date->iso-y-m-d (util/doy->cljs-time-date abs-start-day year*))
+                             (if (= year* (cstc/year (cstc/now)))
+                               (util/cljs-time-date->iso-y-m-d (cstc/now))
+                               (str year* "-01-01"))))
+             :change #(abs-start-day! (util/cljs-time-date->doy (cstf/parse (cstf/formatters :date)
+                                                                               @%))))))
+
+       (div
+         :col {:xs 4}
+         (div
+           :class "input-group"
+           (span :class "input-group-addon" "bis")
+           (input
+             :id abs-end-day-id
+             :class "form-control"
+             :type "date"
+             :value (cell= (if (and abs-end-day year*)
+                             (util/cljs-time-date->iso-y-m-d (util/doy->cljs-time-date abs-end-day year*))
+                             (if (= year* (cstc/year (cstc/now)))
+                               (util/cljs-time-date->iso-y-m-d (cstc/now))
+                               (str year* "-01-01"))))
+             :change #(abs-end-day! (util/cljs-time-date->doy (cstf/parse (cstf/formatters :date)
+                                                                             @%))))))
+
+       (div
+         :col {:xs 3}
+         (div
+           :class "input-group"
+           (input
+             :id amount-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :amount-placeholder s/lang))
+             :step 0.1
+             :min 0
+             :value amount
+             :change #(amount! (js/parseFloat @%)))
+           (span :class "input-group-addon" "mm")))
+
+       (div
+         :col {:xs 1}
+         (button
+           :class (cell= {:btn true
+                          :btn-sm true
+                          :btn-danger (not (nil? row-no))
+                          :btn-warning (nil? row-no)})
+           ;:type "button"
+           ;:value (cell= (if row-no (vocab :remove-donation-label s/lang) (vocab :add-donation-label s/lang)))
+           :click #(row-action! (some-> row-no deref))
+           (span :class (cell= {:glyphicon true
+                                :glyphicon-trash (not (nil? row-no))
+                                :glyphicon-plus (nil? row-no)})))))
+     (dissoc attrs :fields :opts) kids)))
+
+(defelem
+  create-dc-assertion-inputs
+  [{{:keys [row-no row-action!
+            dc->names
+            year
+            abs-day abs-day!
+            dc dc!]} :fields
+    :as attrs} kids]
+
+  (let [year* (cell= (or year (cstc/year (cstc/now))))
+        [abs-day-id dc-id dc-select-id] (repeatedly gensym)]
+    ((div
+       :class "row"
+
+       (div
+         :col {:xs 4}
+         (input
+           :id abs-day-id
+           :class "form-control"
+           :type "date"
+           :value (cell= (if abs-day
+                           (util/cljs-time-date->iso-y-m-d (util/doy->cljs-time-date abs-day year*))
+                           (if (= year* (cstc/year (cstc/now)))
+                             (util/cljs-time-date->iso-y-m-d (cstc/now))
+                             (str year* "-01-01"))))
+           :change #(abs-day! (util/cljs-time-date->doy (cstf/parse (cstf/formatters :date) @%)))))
+
+       (div
+         :col {:xs 3}
+         (input
+           :id dc-id
+           :class "form-control"
+           :type "number"
+           :placeholder (cell= (vocab :dc-placeholder s/lang))
+           :step 1
+           :min 1
+           :max 100
+           :value dc
+           :change #(dc! (js/parseInt @%))))
+
+       (div
+         :col {:xs 4}
+         (select
+           :id dc-select-id
+           :class "form-control"
+           :change #(dc! (js/parseInt @%))
+           (option :selected (cell= (nil? row-no)) "")
+           (loop-tpl
+             :bindings [[dc* name] (cell= (sort-by first dc->names))]
+             (option :value dc*
+                     :data-dc dc
+                     :selected (cell= (= dc* dc))
+                     (text "~{dc*} | ~{name}")))))
+
+       (div
+         :col {:xs 1}
+         (button
+           :class (cell= {:btn true
+                          :btn-sm true
+                          :btn-danger (not (nil? row-no))
+                          :btn-warning (nil? row-no)})
+           :click #(row-action! (some-> row-no deref))
+           (span :class (cell= {:glyphicon true
+                                :glyphicon-trash (not (nil? row-no))
+                                :glyphicon-plus (nil? row-no)})))))
+     (dissoc attrs :fields :opts) kids)))
+
+(defelem
+  create-weather-data-inputs
+  [{{:keys [row-no row-action!
+            date date!
+            tavg tavg!
+            globrad globrad!
+            precip precip!
+            evap evap!
+            prog? prog?!
+            prog-date prog-date!]} :fields
+    {edit? :edit?
+     prog-visible? :prognosis-visible?} :opts
+    :as attrs} kids]
+
+  (let [no-edit? (cell= (not edit?))
+        [date-id tavg-id tavg-checked-id globrad-id globrad-checked-id precip-id evap-id prog?-id prog-date-id] (repeatedly gensym)]
+    ((div
+       :class "row"
+       (let [date-str (cell= (if date
+                               (cstf/unparse (cstf/formatters :date) (cstcoe/from-date date))
+                               (str (cstc/year (cstc/now)) "-01-01")))]
+         (div
+           :col {:xs 2}
+           (p
+             :toggle no-edit?
+             :class "form-control-static"
+             (text "~(if (nil? row-no) (vocab :date-placeholder s/lang) date-str)"))
+           (input
+             :id date-id
+             :toggle edit?
+             :class "form-control"
+             :type "date"
+             :value date-str
+             :change #(date! (cstcoe/to-date (cstf/parse (cstf/formatters :date)
+                                                            @%))))))
+
+       #_(div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (input
+             :id tavg-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :tavg-placeholder s/lang))
+             :step 0.1
+             :min -70
+             :max 70
+             :value tavg
+             :change #(tavg! (js/parseFloat @%)))
+           (span :class "input-group-addon" "°C"))
+         (div
+           :class "input-group"
+           (input
+             :id globrad-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :globrad-placeholder s/lang))
+             :step 0.1
+             ;:min -70
+             ;:max 70
+             :value globrad
+             :change #(globrad! (js/parseFloat @%)))
+           (span :class "input-group-addon" "J/cm²")))
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (p
+             :toggle no-edit?
+             :class "form-control-static"
+             (text "~(if (nil? row-no) (vocab :evap-placeholder s/lang) evap)"))
+           (input
+             :id evap-id
+             :toggle edit?
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :evap-placeholder s/lang))
+             :step 0.1
+             :min 0
+             :value evap
+             :change #(evap! (js/parseFloat @%)))
+           (span
+             :toggle (cell= (or edit? (not (nil? row-no))))
+             :class "input-group-addon" "mm")))
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (p :toggle no-edit? :class "form-control-static" (text "~(if (nil? row-no) (vocab :precip-placeholder s/lang) precip)"))
+           (input
+             :id precip-id
+             :toggle edit?
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :precip-placeholder s/lang))
+             :step 0.1
+             :min 0
+             :value precip
+             :change #(precip! (js/parseFloat @%)))
+           (span
+             :toggle (cell= (or edit? (not (nil? row-no))))
+             :class "input-group-addon" "mm")))
+
+       (div
+         :col {:xs 1}
+         :toggle prog-visible?
+         (label
+           :class "checkbox-inline"
+           (input
+             :id prog?-id
+             :type "checkbox"
+             :value prog?
+             :change #(prog?! @%))
+           (text "~(vocab :prog?-label s/lang)")))
+
+       (let [prog-date-str (cell= (if prog-date
+                                    (cstf/unparse (cstf/formatters :date) (cstcoe/from-date prog-date))
+                                    (str (cstc/year (cstc/now)) "-01-01")))]
+         (div
+           :col {:xs 2}
+           :toggle (cell= (and prog? prog-visible?))
+           (p :toggle no-edit? :class "form-control-static" (text "~{prog-date-str}"))
+           (input
+             :id prog-date-id
+             :class "form-control"
+             :type "date"
+             :value prog-date-str
+             :change #(prog-date! (cstcoe/to-date (cstf/parse (cstf/formatters :date)
+                                                                 @%))))))
+
+       (div
+         :col {:xs 1}
+         :toggle edit?
+         (button
+           :class (cell= {:btn true
+                          :btn-sm true
+                          :btn-danger (not (nil? row-no))
+                          :btn-warning (nil? row-no)})
+           :click #(row-action! (some-> row-no deref))
+           (span :class (cell= {:glyphicon true
+                                :glyphicon-trash (not (nil? row-no))
+                                :glyphicon-plus (nil? row-no)})))))
+      (dissoc attrs :fields :opts) kids)))
+
+(defelem weather-data-form-group
+         [{:keys [visible?
+                  edit
+                  prognosis-visible? default-prognosis-issue-date
+                  weather-data
+                  id-attr id]
+           :as attrs} kids]
+
+         ((bs/form-group
+           :toggle visible?
+           (bs/control-label :col {:xs 2} (text "~(vocab :weather-data-label s/lang)"))
+           (let [edit? edit
+
+                 date* (cell (cstcoe/to-date (cstc/now)))
+                 tavg* (cell nil)
+                 globrad* (cell nil)
+                 evap* (cell nil)
+                 precip* (cell nil)
+                 prog?* (cell false)
+                 prog-issue-date* (cell nil)
+                 prog-issue-date (cell= (or prog-issue-date* default-prognosis-issue-date))
+                 #__ #_(cell= (println "date*: " date* " tavg*: " tavg* " globrad*: " globrad*
+                                   " evap*: " evap* " precip*: " precip* " prog?*: " prog?* " prog-issue-date: " prog-issue-date))]
+                (div
+                  :col {:xs 10}
+
+                  (loop-tpl
+                    :bindings [[row-no {db-id :db/id
+                                        date :weather-data/date
+                                        tavg :weather-data/average-temperature
+                                        globrad :weather-data/global-radiation
+                                        evap :weather-data/evaporation
+                                        precip :weather-data/precipitation
+                                        prog-date :weather-data/prognosis-date}]
+                               (cell= (util/indexed (sort-by (comp util/js-date->doy :weather-data/date) weather-data)))]
+                    (create-weather-data-inputs
+                      :fields {:row-no row-no
+                               :row-action! #(s/delete-db-entity @db-id)
+                               :date date :date! #(s/update-db-entity @db-id :weather-data/date (cstcoe/to-date %))
+                               :tavg tavg :tavg! #(s/update-db-entity @db-id :weather-data/average-temperature % :value-type :double)
+                               :globrad globrad :globrad! #(s/update-db-entity @db-id :weather-data/global-radiation % :value-type :double)
+                               :evap evap :evap! #(s/update-db-entity @db-id :weather-data/evaporation % :value-type :double)
+                               :precip precip :precip! #(s/update-db-entity @db-id :weather-data/precipitation % :value-type :double)
+                               :prog? (cell= (not (nil? prog-date)))
+                               :prog! #(if %
+                                        (s/update-db-entity @db-id :weather-data/prognosis-date default-prognosis-issue-date)
+                                        (s/retract-db-value @db-id :weather-data/prognosis-date prog-date))
+                               :prog-date prog-date :prog-date! #(s/update-db-entity @db-id :weather-data/prognosis-date (cstcoe/to-date %))}
+                      :opts {:prognosis-visible? prognosis-visible?
+                             :edit? edit?}))
+                  (create-weather-data-inputs
+                    :fields {:row-action! #(when (and @date* (or @precip* @evap* (and @tavg* @globrad*)))
+                                            (s/create-new-weather-data id-attr @id @date* @tavg* @globrad*
+                                                                       @evap* @precip* (when @prog?* @prog-issue-date))
+                                            (reset! date* (cstcoe/to-date (cstc/now)))
+                                            (reset! evap* nil)
+                                            (reset! tavg* nil)
+                                            (reset! globrad* nil)
+                                            (reset! precip* nil)
+                                            (reset! prog?* false)
+                                            (reset! prog-issue-date* nil))
+                             :date date* :date! #(reset! date* %)
+                             :tavg tavg* :tavg! #(reset! tavg* %)
+                             :globrad globrad* :globrad! #(reset! globrad* %)
+                             :evap evap* :evap! #(reset! evap* %)
+                             :precip precip* :precip! #(reset! precip* %)
+                             :prog? prog?* :prog?! #(reset! prog?* %)
+                             :prog-date prog-issue-date :prog-date! #(reset! prog-issue-date* %)}
+                    :opts {:prognosis-visible? prognosis-visible?
+                           :edit? edit?}))))
+          (dissoc attrs :visible? :prognosis-visible? :default-prognosis-issue-date :weather-data :id-attr :id) kids))
+
+(defelem
+  create-crop-dc-to-dev-state-name-inputs
+  [{{:keys [row-no row-action!
+            dc dc!
+            name name!]} :fields
+    opts :opts
+    :as attrs} kids]
+
+  (let [[dc-id name-id] (repeatedly gensym)]
+    ((div
+       :class "row"
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (input
+             :id dc-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :dc-placeholder s/lang))
+             :step 1
+             :min 0
+             :max 100
+             :value dc
+             :change #(dc! (js/parseInt @%)))
+           (span :class "input-group-addon" "")))
+
+       (div
+         :col {:xs 3}
+         (div
+           :class "input-group"
+           (input
+             :id name-id
+             :class "form-control"
+             :type "text"
+             :placeholder (cell= (vocab :crop-name-placeholder s/lang))
+             :value name
+             :change #(name! @%))
+           (span :class "input-group-addon" "")))
+
+       (div
+         :col {:xs 2}
+         (button
+           :class (cell= {:btn true
+                          :btn-sm true
+                          :btn-danger (not (nil? row-no))
+                          :btn-warning (nil? row-no)})
+           ;:type "button"
+           ;:value (cell= (if row-no (vocab :remove-crop-dc-to-name-label s/lang) (vocab :add-crop-dc-to-name-label s/lang)))
+           :click #(row-action! (some-> row-no deref))
+           (span :class (cell= {:glyphicon true
+                                :glyphicon-trash (not (nil? row-no))
+                                :glyphicon-plus (nil? row-no)})))))
+     (dissoc attrs :fields :opts) kids)))
+
+(defelem
+  create-crop-dc-to-rel-dc-day-inputs
+  [{{:keys [row-no row-action!
+            dc dc!
+            rel-dc-day rel-dc-day!]} :fields
+    opts :opts
+    :as attrs} kids]
+
+  (let [[dc-id rel-dc-day-id] (repeatedly gensym)]
+    ((div
+       :class "row"
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (input
+             :id dc-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :dc-placeholder s/lang))
+             :step 1
+             :min 0
+             :max 100
+             :value dc
+             :change #(dc! (js/parseInt @%)))
+           (span :class "input-group-addon" "")))
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (input
+             :id rel-dc-day-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :crop-rel-dc-day-placeholder s/lang))
+             :step 1
+             :min 1
+             :max 365
+             :value rel-dc-day
+             :change #(rel-dc-day! (js/parseInt @%)))
+           (span :class "input-group-addon" "")))
+
+       (div
+         :col {:xs 2}
+         (button
+           :class (cell= {:btn true
+                          :btn-sm true
+                          :btn-danger (not (nil? row-no))
+                          :btn-warning (nil? row-no)})
+           ;:type "button"
+           ;:value (cell= (if row-no (vocab :remove-crop-dc-to-rel-dc-day-label s/lang) (vocab :add-crop-dc-to-rel-dc-day-label s/lang)))
+           :click #(row-action! (some-> row-no deref))
+           (span :class (cell= {:glyphicon true
+                                :glyphicon-trash (not (nil? row-no))
+                                :glyphicon-plus (nil? row-no)})))))
+     (dissoc attrs :fields :opts) kids)))
+
+
+(defelem
+  create-crop-rel-dc-day-to-cover-degree-inputs
+  [{{:keys [row-no row-action!
+            rel-dc-day rel-dc-day!
+            cover-degree cover-degree!]} :fields
+    opts :opts
+    :as attrs} kids]
+
+  (let [[rel-dc-day-id cover-degree-id] (repeatedly gensym)]
+    ((div
+       :class "row"
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (input
+             :id rel-dc-day-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :crop-rel-dc-day-placeholder s/lang))
+             :step 1
+             :min 1
+             :max 365
+             :value rel-dc-day
+             :change #(rel-dc-day! (js/parseInt @%)))
+           (span :class "input-group-addon" "d")))
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (input
+             :id cover-degree-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :crop-cover-degree-placeholder s/lang))
+             :step 1
+             :min 0
+             :max 100
+             :value cover-degree
+             :change #(cover-degree! (js/parseInt @%)))
+           (span :class "input-group-addon" "%")))
+
+       (div
+         :col {:xs 2}
+         (button
+           :class (cell= {:btn true
+                          :btn-sm true
+                          :btn-danger (not (nil? row-no))
+                          :btn-warning (nil? row-no)})
+           ;:type "button"
+           ;:value (cell= (if row-no (vocab :remove-crop-rel-dc-day-to-cover-degree-label s/lang) (vocab :add-crop-rel-dc-day-to-cover-degree-label s/lang)))
+           :click #(row-action! (some-> row-no deref))
+           (span :class (cell= {:glyphicon true
+                                :glyphicon-trash (not (nil? row-no))
+                                :glyphicon-plus (nil? row-no)})))))
+     (dissoc attrs :fields :opts) kids)))
+
+(defelem
+  create-crop-rel-dc-day-to-aet7pet-inputs
+  [{{:keys [row-no row-action!
+            rel-dc-day rel-dc-day!
+            aet7pet aet7pet!]} :fields
+    opts :opts
+    :as attrs} kids]
+
+  (let [[rel-dc-day-id aet7pet-id] (repeatedly gensym)]
+    ((div
+       :class "row"
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (input
+             :id rel-dc-day-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :crop-rel-dc-day-placeholder s/lang))
+             :step 1
+             :min 1
+             :max 365
+             :value rel-dc-day
+             :change #(rel-dc-day! (js/parseInt @%)))
+           (span :class "input-group-addon" "d")))
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (input
+             :id aet7pet-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :crop-aet7pet-placeholder s/lang))
+             :step 1
+             :min 0
+             :max 100
+             :value aet7pet
+             :change #(aet7pet! (js/parseInt @%)))
+           (span :class "input-group-addon" "%")))
+
+       (div
+         :col {:xs 2}
+         (button
+           :class (cell= {:btn true
+                          :btn-sm true
+                          :btn-danger (not (nil? row-no))
+                          :btn-warning (nil? row-no)})
+           ;:type "button"
+           ;:value (cell= (if row-no (vocab :remove-crop-rel-dc-day-to-aet7pet-label s/lang) (vocab :add-crop-rel-dc-day-to-aet7pet-label s/lang)))
+           :click #(row-action! (some-> row-no deref))
+           (span :class (cell= {:glyphicon true
+                                :glyphicon-trash (not (nil? row-no))
+                                :glyphicon-plus (nil? row-no)})))))
+     (dissoc attrs :fields :opts) kids)))
+
+(defelem
+  create-crop-rel-dc-day-to-extraction-depth-inputs
+  [{{:keys [row-no row-action!
+            rel-dc-day rel-dc-day!
+            extraction-depth extraction-depth!]} :fields
+    opts :opts
+    :as attrs} kids]
+
+  (let [[rel-dc-day-id extraction-depth-id] (repeatedly gensym)]
+    ((div
+       :class "row"
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (input
+             :id rel-dc-day-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :crop-rel-dc-day-placeholder s/lang))
+             :step 1
+             :min 1
+             :max 365
+             :value rel-dc-day
+             :change #(rel-dc-day! (js/parseInt @%)))
+           (span :class "input-group-addon" "d")))
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (input
+             :id extraction-depth-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :crop-extraction-depth-placeholder s/lang))
+             :step 5
+             :min 0
+             :max 200
+             :value extraction-depth
+             :change #(extraction-depth! (js/parseInt @%)))
+           (span :class "input-group-addon" "cm")))
+
+       (div
+         :col {:xs 2}
+         (button
+           :class (cell= {:btn true
+                          :btn-sm true
+                          :btn-danger (not (nil? row-no))
+                          :btn-warning (nil? row-no)})
+           ;:type "button"
+           ;:value (cell= (if row-no (vocab :remove-crop-rel-dc-day-to-extraction-depth-label s/lang) (vocab :add-crop-rel-dc-day-to-extraction-depth-label s/lang)))
+           :click #(row-action! (some-> row-no deref))
+           (span :class (cell= {:glyphicon true
+                                :glyphicon-trash (not (nil? row-no))
+                                :glyphicon-plus (nil? row-no)})))))
+     (dissoc attrs :fields :opts) kids)))
+
+(defelem
+  create-crop-rel-dc-day-to-transpiration-factor-inputs
+  [{{:keys [row-no row-action!
+            rel-dc-day rel-dc-day!
+            transpiration-factor transpiration-factor!]} :fields
+    opts :opts
+    :as attrs} kids]
+
+  (let [[rel-dc-day-id transpiration-factor-id] (repeatedly gensym)]
+    ((div
+       :class "row"
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (input
+             :id rel-dc-day-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :crop-rel-dc-day-placeholder s/lang))
+             :step 1
+             :min 1
+             :max 365
+             :value rel-dc-day
+             :change #(rel-dc-day! (js/parseInt @%)))
+           (span :class "input-group-addon" "d")))
+
+       (div
+         :col {:xs 2}
+         (div
+           :class "input-group"
+           (input
+             :id transpiration-factor-id
+             :class "form-control"
+             :type "number"
+             :placeholder (cell= (vocab :crop-transpiration-factor-placeholder s/lang))
+             :step 0.1
+             :min 0
+             :max 2
+             :value transpiration-factor
+             :change #(transpiration-factor! (js/parseFloat @%)))
+           (span :class "input-group-addon" "")))
+
+       (div
+         :col {:xs 2}
+         (button
+           :class (cell= {:btn true
+                          :btn-sm true
+                          :btn-danger (not (nil? row-no))
+                          :btn-warning (nil? row-no)})
+           ;:type "button"
+           ;:value (cell= (if row-no (vocab :remove-crop-rel-dc-day-to-transpiration-factor-label s/lang) (vocab :add-crop-rel-dc-day-to-transpiration-factor-label s/lang)))
+           :click #(row-action! (some-> row-no deref))
+           (span :class (cell= {:glyphicon true
+                                :glyphicon-trash (not (nil? row-no))
+                                :glyphicon-plus (nil? row-no)})))))
+     (dissoc attrs :fields :opts) kids)))
+
+(defelem
+  create-com-con-inputs
+  [{{:keys [row-no row-action!
+            id id!
+            desc desc!
+            type type!]} :fields
+    opts :opts
+    :as attrs} kids]
+
+  (let [[id-id desc-id type-id] (repeatedly gensym)]
+    ((div
+       :class "row"
+
+       (div
+         :col {:xs 4}
+         (input
+           :id id-id
+           :class "form-control"
+           :type "text"
+           :placeholder (cell= (vocab :com-con-id-placeholder s/lang))
+           :value id
+           :change #(id! @%)))
+
+       (div
+         :col {:xs 3}
+         (input
+           :id desc-id
+           :class "form-control"
+           :type "text"
+           :placeholder (cell= (vocab :com-con-desc-placeholder s/lang))
+           :value desc
+           :change #(desc! @%)))
+
+       (div
+         :col {:xs 3}
+         (select
+           :id type-id
+           :class "form-control"
+           :change #(type! (keyword "com-con.type" @%))
+           (option :value "" "")
+           (option :value "mobile-phone"
+                   :selected (cell= (= :com-con.type/mobile-phone type))
+                   (text "~(vocab :com-con-mobile-phone-label s/lang)"))
+           (option :value "fixed-phone"
+                   :selected (cell= (= :com-con.type/fixed-phone type))
+                   (text "~(vocab :com-con-fixed-phone-label s/lang)"))
+           (option :value "fax"
+                   :selected (cell= (= :com-con.type/fax type))
+                   (text "~(vocab :com-con-fax-label s/lang)"))
+           (option :value "skype"
+                   :selected (cell= (= :com-con.type/skype type))
+                   (text "~(vocab :com-con-skype-label s/lang)"))
+           (option :value "email"
+                   :selected (cell= (= :com-con.type/email type))
+                   (text "~(vocab :com-con-email-label s/lang)"))
+           (option :value "minstant-messaging"
+                   :selected (cell= (= :com-con.type/instant-messaging type))
+                   (text "~(vocab :com-con-instant-messaging-label s/lang)"))
+           (option :value "uri"
+                   :selected (cell= (= :com-con.type/uri type))
+                   (text "~(vocab :com-con-uri-label s/lang)"))))
+
+       (div
+         :col {:xs 2}
+         (button
+           :class (cell= {:btn true
+                          :btn-sm true
+                          :btn-danger (not (nil? row-no))
+                          :btn-warning (nil? row-no)})
+           :click #(row-action! (some-> row-no deref))
+           (span :class (cell= {:glyphicon true
+                                :glyphicon-trash (not (nil? row-no))
+                                :glyphicon-plus (nil? row-no)})))))
+     (dissoc attrs :fields :opts) kids)))
+
+
+(defelem active
+         [{:keys [state]} [elem]]
+         (elem :class (cell= {:active state})))
+
+(defelem trigger
+         [{:keys [state tab]} [elem]]
+         (active :state (cell= (= state tab))
+                 (elem :click #(reset! state tab))))
+
+(defelem content
+         [{:keys [state tab]} [elem]]
+         (active :state (cell= (= state tab)) elem))
+
+(defelem tabs
+         [{:keys [state] :as attr :or {state (cell 0)}} kids]
+         (let [ctnr (div (dissoc attr :state))
+               [trigs conts] (->> kids (partition 2) (apply map list))
+               a-void #(a :href "javascript:void(0)" %)
+               mktrig #(trigger :state state :tab %1 (li (a-void %2)))
+               mkcont #(content :state state :tab %1 (%2 :class "tab-pane"))]
+           (div (dissoc attr :state)
+                (ul :class "nav nav-tabs" (map-indexed mktrig trigs))
+                (div :class "tab-content" (map-indexed mkcont conts)))))
