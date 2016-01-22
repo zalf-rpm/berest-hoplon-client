@@ -113,13 +113,22 @@
               :src "fbm-logo.png"
               :alt "FBM-Logo")))
         (span
+            :class "navbar-brand"
+            :style "padding-top: 6px"
+            (a
+              :href "http://www.zalf.de"
+              (img
+                :style "height:40px" #_"clear: both"
+                :src "zalf-logo.png"
+                :alt "ZALF-Logo")))
+        (span
           :class "navbar-text"
           :style "margin-top: 8px; margin-bottom: 8px"
           (a
             :href "#/farms"
             (span
               :toggle s/show-content?
-              :style "vertical-align: middle; font-size:24px; font-weight:bold" "IRRIGAMA.WEB"))))
+              :style "vertical-align: middle; font-size:24px; font-weight:bold" page-name-label))))
 
       (div
         :class "collapse navbar-collapse"
@@ -285,7 +294,7 @@
           (img
             :col {:xs 12}
             :class "img-responsive"
-            :src "irrigama-web-small.jpg"))))))
+            :src "webberest-logo-small.png"))))))
 
 
 (defelem safe-delete-button

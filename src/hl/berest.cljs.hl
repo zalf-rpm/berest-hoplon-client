@@ -16,13 +16,6 @@
 
 #_(println "hostname: " (-> js/window .-location .-hostname))
 
-(def server-url (condp = (-> js/window .-location .-hostname)
-                  "" "http://localhost:3000/"
-                  "localhost" "http://localhost:3000/"
-                  "http://env-7945450.jelastic.dogado.eu/"
-                  #_"https://berest-zalflsa.rhcloud.com/"))
-#_(println "server-url: " server-url)
-
 (defc edn-result nil)
 #_(cell= (println "edn-result: " edn-result))
 
@@ -34,8 +27,8 @@
 (defn vocab
   "translatable vocabulary for this page"
   [element lang]
-  (get-in {:page-name {:lang/de "IRRIGAMA.WEB"
-                       :lang/en "IRRIGAMA.WEB"}
+  (get-in {:page-name {:lang/de "WEB-BEREST"
+                       :lang/en "WEB-BEREST"}
            :all-farms {:lang/de "Alle Betriebe"
                        :lang/en "all farms"}
            :dwd-weather-stations {:lang/de "DWD Wetterstationen"
