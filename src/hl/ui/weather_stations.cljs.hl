@@ -161,7 +161,7 @@
 
              (table
                :class "table"
-               :toggle many-weather-stations?
+               ;:toggle many-weather-stations?
 
                (thead
                  (tr

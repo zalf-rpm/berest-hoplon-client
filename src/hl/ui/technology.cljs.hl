@@ -261,7 +261,7 @@
                    :max 100
                    :placeholder (cell= (vocab :donation-min-placeholder s/lang))
                    :value donation-min
-                   :change #(donation-min! (js/parseInt @%)))
+                   :change #(donation-min! (js/parseFloat @%)))
                  (span :class "input-group-addon" "mm"))
                ))
 
@@ -282,7 +282,7 @@
                    :max 100
                    :placeholder (cell= (vocab :donation-opt-placeholder s/lang))
                    :value donation-opt
-                   :change #(donation-opt! (js/parseInt @%)))
+                   :change #(donation-opt! (js/parseFloat @%)))
                  (span :class "input-group-addon" "mm"))
                ))
 
@@ -303,7 +303,7 @@
                    :max 100
                    :placeholder (cell= (vocab :donation-max-placeholder s/lang))
                    :value donation-max
-                   :change #(donation-max! (js/parseInt @%)))
+                   :change #(donation-max! (js/parseFloat @%)))
                  (span :class "input-group-addon" "mm"))
                ))
 
@@ -324,7 +324,7 @@
                    :max 50
                    :placeholder (cell= (vocab :step-size-placeholder s/lang))
                    :value step-size
-                   :change #(step-size! (js/parseInt @%)))
+                   :change #(step-size! (js/parseFloat @%)))
                  (span :class "input-group-addon" "mm"))
                ))
            )
