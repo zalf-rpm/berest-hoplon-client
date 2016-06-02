@@ -4,7 +4,7 @@
     [cljs-time.core :as cstc]
     [cljs-time.format :as cstf]
     [cljs-time.coerce :as cstcoe]
-    [bootstrap-util :as bsu]
+    [util.bootstrap :as bsu]
     [hoplon.twitter.bootstrap :as bs]
     [de.zalf.berest.client.hoplon.util :as util]
     [de.zalf.berest.client.hoplon.state :as s]))

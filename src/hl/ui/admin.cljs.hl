@@ -10,7 +10,7 @@
             [de.zalf.berest.client.hoplon.state :as s]
             [ui.user :as user]
             [ui.elements :as uie]
-            [bootstrap-util :as bsu]
+            [util.bootstrap :as bsu]
             [hoplon.twitter.bootstrap :as bs]
             [cljs-time.core :as cstc]
             [cljs-time.format :as cstf]

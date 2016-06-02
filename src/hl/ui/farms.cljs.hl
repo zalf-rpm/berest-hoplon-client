@@ -16,7 +16,7 @@
             [ui.farm :as farm]
             [ui.plot :as plot]
             [ui.plot-annual :as plot-annual]
-            [bootstrap-util :as bsu]
+            [util.bootstrap :as bsu]
             [hoplon.twitter.bootstrap :as bs]
             [de.zalf.berest.client.hoplon.helper :as h]))
 

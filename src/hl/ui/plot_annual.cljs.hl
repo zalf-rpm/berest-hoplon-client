@@ -10,7 +10,7 @@
             [ui.components :as uic]
             [ui.technology :as technology]
             [ui.addresses :as addr]
-            [bootstrap-util :as bsu]
+            [util.bootstrap :as bsu]
             [hoplon.twitter.bootstrap :as bs]
             [cljsjs.highcharts]
             [cljs-time.core :as cstc]
