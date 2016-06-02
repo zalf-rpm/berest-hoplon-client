@@ -140,7 +140,8 @@
          donation-max-id
          donation-opt-id
          step-size-id
-         technology-form-name] (repeatedly gensym)]
+         technology-form-name] (repeatedly gensym)
+        ]
     ((div
        (bs/form-horizontal
          :name technology-form-name

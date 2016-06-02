@@ -348,6 +348,7 @@
          new-crop-instance-id
          calc-until-id
          chart-id
+         x-axis-id
          crop-curves-chart-id
          recommended-donation-id
          plot-line-id plot-band-id
@@ -454,7 +455,8 @@
                       #_:subtitle #_{:text (str (vocab :chart-subheader @s/lang) " " @name)
                                      :x 0 #_-20
                                      :y -20}
-                      :xAxis {:type "datetime"
+                      :xAxis {:id x-axis-id
+                              :type "datetime"
                               :labels {:format "{value: %d.%m.%Y}"
                                        :rotation 45
                                        :align "left"}}
@@ -578,10 +580,9 @@
                              (some-> chart-id
                                      util/by-id
                                      js/jQuery
-                                     #_(get "highcharts")
                                      .highcharts
                                      .-series
-                                     (#(nth % series-index) ,,,)
+                                     (aget ,,, series-index)
                                      f))
 
         set-series-data (fn [series-index data]
@@ -669,14 +670,11 @@
         ;_ (cell= (set-series-data 9 (create-ordered-curve-data soil-moistures :pet year)))
 
         _ (cell= (when soil-moistures
-                   #_(println "soil-moistures: " (pr-str soil-moistures))
                    (some-> chart-id
                            util/by-id
                            js/jQuery
-                           #_(get "highcharts")
                            .highcharts
-                           .-xAxis
-                           (nth,,, 0)
+                           (.get ,,, (str x-axis-id))
                            (#(do
                               (.removePlotLine % (str plot-line-id))
                               (.addPlotLine % (clj->js {:id plot-line-id
@@ -688,7 +686,7 @@
                               (.addPlotLine % (clj->js {:id plot-band-id
                                                         :color "#FCFFC5"
                                                         :from (.getTime (util/doy->js-date calc-until-abs-day* year))
-                                                        :to (.getTime (util/doy->js-date (+ 5 calc-until-abs-day* 1) year))})))) ,,, )))
+                                                        :to (.getTime (util/doy->js-date (+ 5 calc-until-abs-day* 1) year))}))) ,,,))))
 
         #_sms-0-10 #_(cell= (->> soil-moistures
                                  (mapv (fn [{:keys [abs-day sm-0-10]}]
