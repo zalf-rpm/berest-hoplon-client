@@ -1,4 +1,4 @@
-(ns bootstrap-util
+(ns util.bootstrap
   #_(:refer-hoplon :exclude [form input])
   (:require [clojure.string :as str]
             #_[hoplon.twitter.bootstrap :as bs]))
