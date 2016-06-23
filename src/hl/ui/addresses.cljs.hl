@@ -8,7 +8,7 @@
             [de.zalf.berest.client.hoplon.util :as util]
             [de.zalf.berest.client.hoplon.state :as s]
             [ui.elements :as uie]
-            [bootstrap-util :as bsu]
+            [util.bootstrap :as bsu]
             [hoplon.twitter.bootstrap :as bs]
     #_[cljs-time.coerce :as cstcoe]))
 

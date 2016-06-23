@@ -3,7 +3,7 @@
             [de.zalf.berest.client.hoplon.state :as s]
             [ui.elements :as uie]
             [ui.components :as uic]
-            [bootstrap-util :as bsu]
+            [util.bootstrap :as bsu]
             [hoplon.twitter.bootstrap :as bs]
             [cljsjs.highcharts]
             [cljs-time.core :as cstc]
@@ -161,7 +161,7 @@
 
              (table
                :class "table"
-               :toggle many-weather-stations?
+               ;:toggle many-weather-stations?
 
                (thead
                  (tr

@@ -9,7 +9,7 @@
             [de.zalf.berest.client.hoplon.state :as s]
             [ui.elements :as uie]
             [ui.components :as uic]
-            [bootstrap-util :as bsu]
+            [util.bootstrap :as bsu]
             [hoplon.twitter.bootstrap :as bs]
             [cljsjs.highcharts]
             #_[cljs-time.coerce :as cstcoe]))

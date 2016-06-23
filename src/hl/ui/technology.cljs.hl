@@ -2,7 +2,7 @@
   (:require [de.zalf.berest.client.hoplon.util :as util]
             [ui.elements :as uie]
             [ui.addresses :as addr]
-            [bootstrap-util :as bsu]
+            [util.bootstrap :as bsu]
             [hoplon.twitter.bootstrap :as bs]
             [cljs-time.core :as cstc]
             [cljs-time.format :as cstf]
@@ -140,7 +140,8 @@
          donation-max-id
          donation-opt-id
          step-size-id
-         technology-form-name] (repeatedly gensym)]
+         technology-form-name] (repeatedly gensym)
+        ]
     ((div
        (bs/form-horizontal
          :name technology-form-name
@@ -261,7 +262,7 @@
                    :max 100
                    :placeholder (cell= (vocab :donation-min-placeholder s/lang))
                    :value donation-min
-                   :change #(donation-min! (js/parseInt @%)))
+                   :change #(donation-min! (js/parseFloat @%)))
                  (span :class "input-group-addon" "mm"))
                ))
 
@@ -282,7 +283,7 @@
                    :max 100
                    :placeholder (cell= (vocab :donation-opt-placeholder s/lang))
                    :value donation-opt
-                   :change #(donation-opt! (js/parseInt @%)))
+                   :change #(donation-opt! (js/parseFloat @%)))
                  (span :class "input-group-addon" "mm"))
                ))
 
@@ -303,7 +304,7 @@
                    :max 100
                    :placeholder (cell= (vocab :donation-max-placeholder s/lang))
                    :value donation-max
-                   :change #(donation-max! (js/parseInt @%)))
+                   :change #(donation-max! (js/parseFloat @%)))
                  (span :class "input-group-addon" "mm"))
                ))
 
@@ -324,7 +325,7 @@
                    :max 50
                    :placeholder (cell= (vocab :step-size-placeholder s/lang))
                    :value step-size
-                   :change #(step-size! (js/parseInt @%)))
+                   :change #(step-size! (js/parseFloat @%)))
                  (span :class "input-group-addon" "mm"))
                ))
            )

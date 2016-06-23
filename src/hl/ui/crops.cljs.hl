@@ -11,7 +11,7 @@
             [ui.elements :as uie]
             [ui.charts :as charts]
             [ui.components :as uic]
-            [bootstrap-util :as bsu]
+            [util.bootstrap :as bsu]
             [hoplon.twitter.bootstrap :as bs]
             [cljsjs.highcharts]
             #_[cljs-time.coerce :as cstcoe]))

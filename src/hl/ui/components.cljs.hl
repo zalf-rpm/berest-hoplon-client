@@ -5,7 +5,7 @@
             [hoplon.core :refer :all]
             [de.zalf.berest.client.hoplon.util :as util]
             [de.zalf.berest.client.hoplon.state :as s]
-            [bootstrap-util :as bsu]
+            [util.bootstrap :as bsu]
             [hoplon.twitter.bootstrap :as bs]))
 
 (defn vocab
@@ -67,7 +67,7 @@
     :id "error"
     :click s/clear-error!
     :slide-toggle s/error
-    (text "~(:message s/error)")))
+    (text "~(ex-message s/error)")))
 
 (defn loading-pane
   []

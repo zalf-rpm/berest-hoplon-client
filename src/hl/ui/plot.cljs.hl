@@ -2,7 +2,7 @@
   (:require [de.zalf.berest.client.hoplon.util :as util]
             [ui.elements :as uie]
             [ui.addresses :as addr]
-            [bootstrap-util :as bsu]
+            [util.bootstrap :as bsu]
             [hoplon.twitter.bootstrap :as bs]
             [de.zalf.berest.client.hoplon.state :as s]))
 

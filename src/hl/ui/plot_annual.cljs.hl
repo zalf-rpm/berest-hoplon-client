@@ -10,7 +10,7 @@
             [ui.components :as uic]
             [ui.technology :as technology]
             [ui.addresses :as addr]
-            [bootstrap-util :as bsu]
+            [util.bootstrap :as bsu]
             [hoplon.twitter.bootstrap :as bs]
             [cljsjs.highcharts]
             [cljs-time.core :as cstc]
@@ -348,6 +348,7 @@
          new-crop-instance-id
          calc-until-id
          chart-id
+         x-axis-id
          crop-curves-chart-id
          recommended-donation-id
          plot-line-id plot-band-id
@@ -454,7 +455,8 @@
                       #_:subtitle #_{:text (str (vocab :chart-subheader @s/lang) " " @name)
                                      :x 0 #_-20
                                      :y -20}
-                      :xAxis {:type "datetime"
+                      :xAxis {:id x-axis-id
+                              :type "datetime"
                               :labels {:format "{value: %d.%m.%Y}"
                                        :rotation 45
                                        :align "left"}}
@@ -578,10 +580,9 @@
                              (some-> chart-id
                                      util/by-id
                                      js/jQuery
-                                     #_(get "highcharts")
                                      .highcharts
                                      .-series
-                                     (#(nth % series-index) ,,,)
+                                     (aget ,,, series-index)
                                      f))
 
         set-series-data (fn [series-index data]
@@ -669,14 +670,11 @@
         ;_ (cell= (set-series-data 9 (create-ordered-curve-data soil-moistures :pet year)))
 
         _ (cell= (when soil-moistures
-                   #_(println "soil-moistures: " (pr-str soil-moistures))
                    (some-> chart-id
                            util/by-id
                            js/jQuery
-                           #_(get "highcharts")
                            .highcharts
-                           .-xAxis
-                           (nth,,, 0)
+                           (.get ,,, (str x-axis-id))
                            (#(do
                               (.removePlotLine % (str plot-line-id))
                               (.addPlotLine % (clj->js {:id plot-line-id
@@ -688,7 +686,7 @@
                               (.addPlotLine % (clj->js {:id plot-band-id
                                                         :color "#FCFFC5"
                                                         :from (.getTime (util/doy->js-date calc-until-abs-day* year))
-                                                        :to (.getTime (util/doy->js-date (+ 5 calc-until-abs-day* 1) year))})))) ,,, )))
+                                                        :to (.getTime (util/doy->js-date (+ 5 calc-until-abs-day* 1) year))}))) ,,,))))
 
         #_sms-0-10 #_(cell= (->> soil-moistures
                                  (mapv (fn [{:keys [abs-day sm-0-10]}]
@@ -979,7 +977,7 @@
              (legend
                (text "~(vocab :technology-fieldset-label s/lang) ~(when-not visible? \" ...\")")))
 
-           (bs/form-group
+           #_(bs/form-group
              :toggle visible?
              (bs/control-label :col {:sm label-cols} :for technology-select-id (text "~(vocab :technology-select-label s/lang)"))
              (div
@@ -1026,13 +1024,17 @@
 
                           :type type :type! #(s/update-db-entity @tec-db-id :technology/type %)
 
-                          :donation-min donation-min :donation-min! #(s/update-db-entity @tec-db-id :donation/min %)
+                          :donation-min donation-min :donation-min! #(s/update-db-entity @tec-db-id :donation/min %
+                                                                                         :value-type :double)
 
-                          :donation-max donation-max :donation-max! #(s/update-db-entity @tec-db-id :donation/max %)
+                          :donation-max donation-max :donation-max! #(s/update-db-entity @tec-db-id :donation/max %
+                                                                                         :value-type :double)
 
-                          :donation-opt donation-opt :donation-opt! #(s/update-db-entity @tec-db-id :donation/opt %)
+                          :donation-opt donation-opt :donation-opt! #(s/update-db-entity @tec-db-id :donation/opt %
+                                                                                         :value-type :double)
 
-                          :step-size step-size :step-size! #(s/update-db-entity @tec-db-id :donation/step-size %)}
+                          :step-size step-size :step-size! #(s/update-db-entity @tec-db-id :donation/step-size %
+                                                                                :value-type :double)}
                  :opts {:edit? true
                         :label-cols 2
                         :value-cols 3})))
@@ -1126,7 +1128,7 @@
                    (bs/form-group
                      (bs/control-label :col {:sm (+ 1 label-cols)} :for dc-assertions-id
                                        (text "~(vocab :dc-assertions-label s/lang)"))
-                     (let [abs-day* (cell nil)
+                     (let [abs-day* (cell (util/cljs-time-date->doy (cstc/now)))
                            ;at-abs-day* (cell nil)
                            dc* (cell nil)
                            ;_ (cell= (println "abs-day*: " abs-day* " dc*: " dc*))
@@ -1302,8 +1304,8 @@
            (bs/form-group
              :toggle visible?
              (bs/control-label :col {:sm label-cols} (text "~(vocab :donations-label s/lang)"))
-             (let [abs-start-day* (cell nil)
-                   abs-end-day* (cell nil)
+             (let [abs-start-day* (cell (util/cljs-time-date->doy (cstc/now)))
+                   abs-end-day* (cell (util/cljs-time-date->doy (cstc/now)))
                    amount* (cell nil)]
                (div
                  :col {:xs (min (+ value-cols 4) (- 12 label-cols))}

@@ -5,7 +5,7 @@
             [ui.components :as uic]
             [ui.addresses :as addr]
             [ui.contacts :as contacts]
-            [bootstrap-util :as bsu]
+            [util.bootstrap :as bsu]
             [hoplon.twitter.bootstrap :as bs]))
 
 (defn vocab
