@@ -67,7 +67,7 @@
     :id "error"
     :click s/clear-error!
     :slide-toggle s/error
-    (text "~(:message s/error)")))
+    (text "~(ex-message s/error)")))
 
 (defn loading-pane
   []
