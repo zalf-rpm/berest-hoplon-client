@@ -128,6 +128,8 @@
 
         (bs/form-horizontal
 
+          (button :toggle false)
+
           (bs/form-group
             (div
               :class "col-xs-offset-1 form-control-static"

@@ -211,6 +211,8 @@
 
       (bs/form-horizontal
 
+        (button :toggle false)
+
         (bs/form-group
           (div
             :class "col-xs-offset-1 form-control-static"
@@ -416,13 +418,13 @@
                                          :class (cell= {:warning (and hover? (not selected?))
                                                         :success selected?})
                                          :click #(s/set-route-params :plot-id @plot-id)
-                                         "10d" #_(text "~(or plot-number \"\")"))
+                                         "" #_"10d" #_(text "~(or plot-number \"\")"))
                                        (td
                                          :style "vertical-align: middle"
                                          :class (cell= {:warning (and hover? (not selected?))
                                                         :success selected?})
                                          :click #(s/set-route-params :plot-id @plot-id)
-                                         "in 4 Tg." #_(span :class "glyphicon glyphicon-ok"))
+                                         "" #_"in 4 Tg." #_(span :class "glyphicon glyphicon-ok"))
                                        (td
                                          :style "text-align: right; vertical-align: middle"
                                          (uic/safe-delete-button

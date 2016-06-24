@@ -704,6 +704,8 @@
     ((bs/form-horizontal
        :name plot-annual-form-name
 
+       (button :toggle false)
+
        (bs/form-group
          (div
            :col {:xs 2}

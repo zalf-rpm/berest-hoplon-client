@@ -146,6 +146,8 @@
        (bs/form-horizontal
          :name technology-form-name
 
+         (button :toggle false)
+
          #_(button
            :style "float:right"
            :class "btn btn-info"

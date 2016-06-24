@@ -114,6 +114,8 @@
     ((bs/form-horizontal
        :name farm-form-name
 
+       (button :toggle false)
+
        (bs/form-group
          (bs/control-label :col {:sm label-cols} :for name-id (text "~(vocab :name-label s/lang)"))
          (div

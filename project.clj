@@ -12,8 +12,9 @@
                  [ring/ring-defaults "0.1.5"]
 
                  [hoplon/twitter-bootstrap "0.2.0"]
-                 [cljsjs/bootstrap "3.3.6-0"]
-                 [cljsjs/highcharts "4.1.10-1"]
+                 [cljsjs/bootstrap "3.3.6-1"]
+                 [cljsjs/highcharts "4.2.5-1" #_"4.1.10-2"]
+                 [cljsjs/jquery "1.11.3-0"]
 
                  [cljs-ajax "0.2.3"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]]

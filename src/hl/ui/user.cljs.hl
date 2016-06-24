@@ -88,6 +88,8 @@
        (bs/form-horizontal
          :name user-form-name
 
+         (button :toggle false)
+
          (button
            :style "float:right"
            :class "btn btn-info"

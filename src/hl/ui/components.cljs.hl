@@ -260,6 +260,9 @@
                     (reset! pwd nil)
                     #_(do! (util/by-id user-id) :value "")
                     #_(do! (util/by-id pwd-id) :value ""))
+
+          (button :toggle false)
+
           (bs/form-group
             (div
               :col {:xs 3}

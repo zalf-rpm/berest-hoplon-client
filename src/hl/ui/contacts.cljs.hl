@@ -81,6 +81,8 @@
        ((bs/form-horizontal
           :name contacts-form-name
 
+          (button :toggle false)
+
           (bs/form-group
             (bs/control-label :col {:sm label-cols} :for title-id (text "~(vocab :title-label s/lang)"))
             (div

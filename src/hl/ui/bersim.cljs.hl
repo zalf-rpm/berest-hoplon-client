@@ -67,6 +67,8 @@
       (bs/form-horizontal
         :name "test-data-form"
 
+        (button :toggle false)
+
         (bs/form-group
           (bs/control-label :col {:sm 2} :for "farm-id" "Betrieb")
           (div

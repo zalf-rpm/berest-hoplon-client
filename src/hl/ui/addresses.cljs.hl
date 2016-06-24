@@ -138,6 +138,8 @@
        ((bs/form-horizontal
           :name address-form-name
 
+          (button :toggle false)
+
           (bs/form-group
             (bs/control-label :col {:sm label-cols} :for description-id (text "~(vocab :description-label s/lang)"))
             (div

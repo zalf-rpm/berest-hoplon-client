@@ -178,6 +178,8 @@
 
       (bs/form-horizontal
 
+        (button :toggle false)
+
         (bs/form-group
           (div
             :class "col-xs-offset-1 form-control-static"
@@ -312,7 +314,9 @@
         :toggle (cell= (not (nil? selected-crop)))
         :name "crops-form"
 
-        (cell-let [{db-id :db/id
+				(button :toggle false)
+
+				(cell-let [{db-id :db/id
                     id :crop/id
                     name :crop/name
                     description :crop/description
