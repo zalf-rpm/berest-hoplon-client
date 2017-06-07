@@ -197,7 +197,11 @@
 
         selected-plot (cell= (when-let [pid (:plot-id s/route-params)]
                                (when-let [ps (:plots selected-farm)]
-                                 (ps (UUID. pid)))))
+                                 ;for some reason the second line doesn't work in current version any more with more
+                                 ;than 8 elements in the map (more than 8 plots) ... no time to investigate further
+                                 ;this is just a stupid workaround
+                                 (second (first (filter #(= (:plot/id (second %)) (UUID. pid)) ps)))
+                                 #_(ps (UUID. pid)))))
 
         _ (cell= (if selected-plot
                    (s/set-breadcrumb :plot (:plot/name selected-plot))
