@@ -1154,7 +1154,7 @@
                          (uie/create-dc-assertion-inputs
                            :fields {:row-action! #(when (and @abs-day* @dc*)
                                                    (s/create-new-dc-assertion @ci-db-id @abs-day* @dc*)
-                                                   (reset! abs-day* nil)
+                                                   (reset! abs-day* (util/cljs-time-date->doy (cstc/now)))
                                                    (reset! dc* nil))
                                     :dc->names dc->names
                                     :year year
@@ -1328,8 +1328,8 @@
                  (uie/create-donation-inputs
                    :fields {:row-action! #(when (and @abs-start-day* @abs-end-day* @amount*)
                                            (s/create-new-donation @db-id @abs-start-day* @abs-end-day* @amount*)
-                                           (reset! abs-start-day* nil)
-                                           (reset! abs-end-day* nil)
+                                           (reset! abs-start-day* (util/cljs-time-date->doy (cstc/now)))
+                                           (reset! abs-end-day* (util/cljs-time-date->doy (cstc/now)))
                                            (reset! amount* nil))
                             :year year
                             :abs-start-day abs-start-day* :abs-start-day! #(reset! abs-start-day* %)
