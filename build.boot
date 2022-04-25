@@ -21,9 +21,10 @@
                   #_[simple-time "0.1.1"]
                   #_[clj-time "0.6.0"]
                   [com.andrewmcveigh/cljs-time "0.4.0"]
+                  [javax.xml.bind/jaxb-api "2.3.0"]
                   ]
   ;:out-path      
-  :resource-paths #{"assets" "src/clj"}
+  ;:resource-paths #{"assets" "src/clj"}
   :source-paths   #{"src/cljs"
                     "src/hl"
 

@@ -1,3 +1,6 @@
 berest-hoplon-client.iml
 /target
 /.idea
+.clj-kondo
+.lsp
+
