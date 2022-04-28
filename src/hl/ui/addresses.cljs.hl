@@ -1,15 +1,17 @@
 (ns ui.addresses
-  (:require-macros [javelin.core :refer :all]
-                   [hoplon.core :refer :all])
   (:refer-hoplon :exclude [address])
-  (:require [javelin.core :refer :all]
-            [hoplon.core :refer :all]
+  
+  (:require-macros [javelin.core :as jm :refer [loop-tpl]]
+                   [hoplon.core :as hm :refer []])
 
+  (:require [javelin.core :as j :refer [cell cell=]]
+            [hoplon.core :as h :refer [div button input text span p h3]]
+  
             [de.zalf.berest.client.hoplon.util :as util]
             [de.zalf.berest.client.hoplon.state :as s]
             [ui.elements :as uie]
-            [util.bootstrap :as bsu]
-            [hoplon.twitter.bootstrap :as bs]
+            [util.bootstrap :as bs]
+            #_[hoplon.twitter.bootstrap :as bs]
     #_[cljs-time.coerce :as cstcoe]))
 
 

@@ -1,12 +1,14 @@
 (ns ui.components
-  (:require-macros [javelin.core :refer :all]
-                   [hoplon.core :refer :all])
-  (:require [javelin.core :refer :all]
-            [hoplon.core :refer :all]
+  (:require-macros [javelin.core :as jm :refer [loop-tpl]]
+                   [hoplon.core :as hm :refer []])
+
+  (:require [javelin.core :as j :refer [cell cell=]]
+            [hoplon.core :as h :refer [nav img a ul li strong img div button input text span p h3 nav]]
+
             [de.zalf.berest.client.hoplon.util :as util]
             [de.zalf.berest.client.hoplon.state :as s]
-            [util.bootstrap :as bsu]
-            [hoplon.twitter.bootstrap :as bs]))
+            [util.bootstrap :as bs]
+            #_[hoplon.twitter.bootstrap :as bs]))
 
 (defn vocab
   "translatable vocabulary for this page"
@@ -79,7 +81,7 @@
 
 (defn top-nav-bar
   [page-name-label]
-  (nav
+  (bs/navbar
     :class "navbar navbar-default navbar-fixed-top"
     ;:role "navigation"
     (div
@@ -243,7 +245,7 @@
 (defn login-pane
   []
   (let [user (cell nil)
-        pwd (cell nil)]
+        pwd (cell "none")]
     (div
       (div
         :id "login-pane"
@@ -254,6 +256,7 @@
         (bs/form-horizontal
           :id "login"
           :submit #(when (and @user @pwd)
+                    (println "user: " @user " pwd: " @pwd)
                     (s/login! @user @pwd)
                     (s/set-route "#/farms")
                     (reset! user nil)
@@ -277,7 +280,7 @@
             (div
               :col {:xs 3}
               :class "col-xs-offset-1"
-              (input
+              #_(input
                 :class "form-control"
                 :placeholder (cell= (vocab :pwd-placeholder s/lang))
                 :type "password"

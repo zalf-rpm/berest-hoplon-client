@@ -1,9 +1,12 @@
 (ns ui.plot
-  (:require [de.zalf.berest.client.hoplon.util :as util]
+  (:require 
+    [javelin.core :as j :refer [cell cell= cell?]]
+    [hoplon.core :as h :refer [fieldset legend textarea select option a li ul label div button input text span p h3]]
+  [de.zalf.berest.client.hoplon.util :as util]
             [ui.elements :as uie]
             [ui.addresses :as addr]
-            [util.bootstrap :as bsu]
-            [hoplon.twitter.bootstrap :as bs]
+            [util.bootstrap :as bs]
+            #_[hoplon.twitter.bootstrap :as bs]
             [de.zalf.berest.client.hoplon.state :as s]))
 
 

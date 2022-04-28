@@ -1,9 +1,9 @@
 (ns ui.farms
-  (:require-macros [javelin.core :refer :all]
-                   [hoplon.core :refer :all])
+  (:require-macros [javelin.core :as jm :refer [loop-tpl]]
+                   [hoplon.core :as hm :refer []])
 
-  (:require [javelin.core :refer :all]
-            [hoplon.core :refer :all]
+  (:require [javelin.core :as j :refer [cell cell=]]
+            [hoplon.core :as hc :refer [table thead tbody tr td th select option label div button input text span p h3]]
 
             [clojure.string :as str]
             [cljs-time.core :as cstc]
@@ -16,8 +16,8 @@
             [ui.farm :as farm]
             [ui.plot :as plot]
             [ui.plot-annual :as plot-annual]
-            [util.bootstrap :as bsu]
-            [hoplon.twitter.bootstrap :as bs]
+            [util.bootstrap :as bs]
+            #_[hoplon.twitter.bootstrap :as bs]
             [de.zalf.berest.client.hoplon.helper :as h]))
 
 

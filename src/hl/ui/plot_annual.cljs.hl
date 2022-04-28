@@ -1,8 +1,9 @@
 (ns ui.plot-annual
-  (:require-macros [javelin.core :refer :all]
-                   [hoplon.core :refer :all])
-  (:require [javelin.core :refer :all]
-            [hoplon.core :refer :all]
+  (:require-macros [javelin.core :as jm :refer [loop-tpl]]
+                   [hoplon.core :as hm :refer []])
+
+  (:require [javelin.core :as j :refer [cell cell= cell?]]
+            [hoplon.core :as h :refer [fieldset legend select option hr label strong div button input text span p h3]]
 
             [clojure.set :as set]
             [ui.charts :as charts]
@@ -10,8 +11,8 @@
             [ui.components :as uic]
             [ui.technology :as technology]
             [ui.addresses :as addr]
-            [util.bootstrap :as bsu]
-            [hoplon.twitter.bootstrap :as bs]
+            [util.bootstrap :as bs]
+            #_[hoplon.twitter.bootstrap :as bs]
             [cljsjs.highcharts]
             [cljs-time.core :as cstc]
             [cljs-time.format :as cstf]

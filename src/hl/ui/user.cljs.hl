@@ -1,8 +1,10 @@
 (ns ui.user
-  (:require [de.zalf.berest.client.hoplon.util :as util]
+  (:require [javelin.core :as j :refer [cell cell= cell?]]
+            [hoplon.core :as h :refer [select option fieldset hr a textarea legend div button input text span p h3]]
+            [de.zalf.berest.client.hoplon.util :as util]
             [ui.elements :as uie]
-            [util.bootstrap :as bsu]
-            [hoplon.twitter.bootstrap :as bs]
+            [util.bootstrap :as bs]
+            #_[hoplon.twitter.bootstrap :as bs]
             [de.zalf.berest.client.hoplon.state :as s]))
 
 (defn vocab
@@ -82,7 +84,7 @@
                      (reset! ~(cell pwd-error) true))))
         _ (cell= (when s/pwd-update-success?
                        (reset! ~(cell pwds) ["" ""])
-                       (timeout #(reset! ~(cell s/pwd-update-success?) nil) 5000)))
+                       (h/timeout #(reset! ~(cell s/pwd-update-success?) nil) 5000)))
         ]
     ((div
        (bs/form-horizontal

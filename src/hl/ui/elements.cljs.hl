@@ -1,11 +1,12 @@
 (ns ui.elements
   (:require
-    [hoplon.core :refer :all]
+    [javelin.core :as j :refer [cell cell=]]
+    [hoplon.core :as h :refer [select option a li ul label div button input text span p h3]]
     [cljs-time.core :as cstc]
     [cljs-time.format :as cstf]
     [cljs-time.coerce :as cstcoe]
-    [util.bootstrap :as bsu]
-    [hoplon.twitter.bootstrap :as bs]
+    [util.bootstrap :as bs]
+    #_[hoplon.twitter.bootstrap :as bs]
     [de.zalf.berest.client.hoplon.util :as util]
     [de.zalf.berest.client.hoplon.state :as s]))
 

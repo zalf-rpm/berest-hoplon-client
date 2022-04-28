@@ -1,12 +1,14 @@
 (ns ui.farm
-  (:require [de.zalf.berest.client.hoplon.util :as util]
+  (:require [javelin.core :as j :refer [cell cell= cell?]]
+            [hoplon.core :as h :refer [table tr th td thead tbody textarea fieldset legend select option hr label strong div button input text span p h3]]
+            [de.zalf.berest.client.hoplon.util :as util]
             [de.zalf.berest.client.hoplon.state :as s]
             [ui.elements :as uie]
             [ui.components :as uic]
             [ui.addresses :as addr]
             [ui.contacts :as contacts]
-            [util.bootstrap :as bsu]
-            [hoplon.twitter.bootstrap :as bs]))
+            [util.bootstrap :as bs]
+            #_[hoplon.twitter.bootstrap :as bs]))
 
 (defn vocab
   "translatable vocabulary for this page"
