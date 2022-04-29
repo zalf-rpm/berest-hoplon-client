@@ -7,8 +7,7 @@
             [ui.components :as uic]
             [ui.addresses :as addr]
             [ui.contacts :as contacts]
-            [util.bootstrap :as bs]
-            #_[hoplon.twitter.bootstrap :as bs]))
+            [hoplon.twitter.bootstrap :as bs]))
 
 (defn vocab
   "translatable vocabulary for this page"

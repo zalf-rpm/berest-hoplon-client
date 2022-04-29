@@ -1,10 +1,8 @@
 (ns ui.farms
   (:require-macros [javelin.core :as jm :refer [loop-tpl]]
-                   [hoplon.core :as hm :refer []])
-
+                   [hoplon.core :as hm :refer [with-timeout]])
   (:require [javelin.core :as j :refer [cell cell=]]
             [hoplon.core :as hc :refer [table thead tbody tr td th select option label div button input text span p h3]]
-
             [clojure.string :as str]
             [cljs-time.core :as cstc]
             [cljs-time.format :as cstf]
@@ -16,10 +14,8 @@
             [ui.farm :as farm]
             [ui.plot :as plot]
             [ui.plot-annual :as plot-annual]
-            [util.bootstrap :as bs]
-            #_[hoplon.twitter.bootstrap :as bs]
+            [hoplon.twitter.bootstrap :as bs]
             [de.zalf.berest.client.hoplon.helper :as h]))
-
 
 (defn vocab
   "translatable vocabulary for this page"

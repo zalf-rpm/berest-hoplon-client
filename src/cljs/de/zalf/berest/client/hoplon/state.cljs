@@ -1,57 +1,10 @@
 (ns de.zalf.berest.client.hoplon.state
-  (:require-macros [javelin.core :refer [prop-cell defc defc= cell=]])
-  (:require #_[clojure.set :as set]
-            [clojure.string :as str]
+  (:require-macros [javelin.core :refer [prop-cell cell=]])
+  (:require [clojure.string :as str]
             [javelin.core :as j :refer [cell]]
-            [castra.core  :as c #_:refer #_[mkremote]]
-            #_[hoplon.core :as h]
-            #_[cognitect.transit :as t]))
+            [castra.core  :as c]))
 
 #_(enable-console-print!)
-
-#_(defn with-default-opts
-  [opts]
-  (->> opts
-       (apply hash-map)
-       (merge {:timeout     0
-               :credentials true
-               :on-error    identity
-               :ajax-fn     c/ajax-fn
-               :json->clj   (partial t/read (t/reader :json))
-               :clj->json   (partial t/write (t/writer :json))
-               :url         (.. js/window -location -href)})))
-
-#_(defn mkremote*
-  "Given state error and loading input cells, returns an RPC function. The
-  optional :url keyword argument can be used to specify the URL to which the
-  POST requests will be made."
-  [endpoint state error loading & opts]
-  (fn [& args]
-    (let [live?  (not c/*validate-only*)
-          prom   (.Deferred js/jQuery)
-          unload #(vec (remove (partial = prom) %))]
-      (when live? (do
-                    (println "args: " args)
-                    #_(println endpoint " before swap! loading (count loading): " (count @loading))
-                    (swap! loading (fnil conj []) prom)
-                    #_(println endpoint " after swap! loading (count loading): " (count @loading))))
-      (let [prom' (-> (ajax (with-default-opts opts) `[~endpoint ~@args])
-                      (.done   #(do
-                                 #_(println endpoint " .done live?: " live? " (count loading): " (count @loading) " error: " error " state: " state)
-                                 (when live?
-                                      (reset! error nil)
-                                      #_(println endpoint " .done reset! state %: " (pr-str %))
-                                      (reset! state (or (:state %) (:result %))))
-                                    (.resolve prom (:result %))))
-                      (.fail   #(do
-                                 #_(println endpoint " .fail")
-                                 (when live? (reset! error %))
-                                 (.reject prom %)))
-                      (.always #(do
-                                 #_(println endpoint " .always before count: " (count @loading))
-                                 (when live? (swap! loading unload))
-                                 #_(println endpoint " .always after count: " (count @loading)))))]
-        (doto prom (aset "xhr" (aget prom' "xhr")))))))
 
 (def server-url #_(condp = (-> js/window .-location .-hostname)
                   "" "http://localhost:3000/"
@@ -60,10 +13,6 @@
   "http://localhost:3000/"
   #_"http://irrigama-web.elasticbeanstalk.com/")
 #_(println "server-url: " server-url)
-
-#_(defn mkremote [& args]
-  #_(apply mkremote* (flatten [args :url server-url]))
-  (apply c/mkremote (flatten [args :url server-url #_jq-cred-ajax])))
 
 (enable-console-print!)
 
@@ -243,10 +192,7 @@
 
 (def show-content?  (cell= (and loaded? logged-in?)))
 
-
 (def clear-error!   #(reset! error nil))
-
-
 
 
 (def login! (c/mkremote 'de.zalf.berest.web.castra.api/login state error loading)) ;:url server-url

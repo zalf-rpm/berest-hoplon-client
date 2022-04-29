@@ -1,25 +1,22 @@
 (ns ui.plot-annual
   (:require-macros [javelin.core :as jm :refer [loop-tpl]]
-                   [hoplon.core :as hm :refer []])
-
+                   [hoplon.core :as hm :refer [with-timeout]])
   (:require [javelin.core :as j :refer [cell cell= cell?]]
             [hoplon.core :as h :refer [fieldset legend select option hr label strong div button input text span p h3]]
-
             [clojure.set :as set]
             [ui.charts :as charts]
             [ui.elements :as uie]
             [ui.components :as uic]
             [ui.technology :as technology]
             [ui.addresses :as addr]
-            [util.bootstrap :as bs]
-            #_[hoplon.twitter.bootstrap :as bs]
-            [cljsjs.highcharts]
+            [hoplon.twitter.bootstrap :as bs]
             [cljs-time.core :as cstc]
             [cljs-time.format :as cstf]
             [cljs-time.coerce :as cstcoe]
             [de.zalf.berest.client.hoplon.state :as s]
-            [de.zalf.berest.client.hoplon.util :as util]))
-
+            [de.zalf.berest.client.hoplon.util :as util]
+            [hoplon.jquery]
+            [cljsjs.highcharts]))
 
 (defn vocab
   "translatable vocabulary for this page"
@@ -577,17 +574,8 @@
                                ]}
         _ (with-timeout 0 (js/Highcharts.Chart. (clj->js chart-config)))
 
-        apply-fn-to-series (fn [series-index f]
-                             (some-> chart-id
-                                     util/by-id
-                                     js/jQuery
-                                     .highcharts
-                                     .-series
-                                     (aget ,,, series-index)
-                                     f))
-
         set-series-data (fn [series-index data]
-                          (apply-fn-to-series series-index #(.setData % (clj->js data))))
+                          (util/apply-fn-to-series chart-id series-index #(.setData % (clj->js data))))
 
         ;_ (cell= (println "..." (pr-str (map (juxt :abs-day :sm-0-10) soil-moistures))))
 
@@ -604,7 +592,7 @@
 
                    ;remove possibly old existing series if user changed
                    (doseq [series-index [11 10 9 8]]
-                     (apply-fn-to-series series-index #(.remove %)))
+                     (util/apply-fn-to-series chart-id series-index #(.remove %)))
 
                    ;add back the consultant only series
                    (doseq [option [{:type "line"
@@ -639,10 +627,7 @@
                                     :data []
                                     :visible false}]]
                      (some-> chart-id
-                             util/by-id
-                             js/jQuery
-                             #_(get "highcharts")
-                             .highcharts
+                             util/get-chart
                              (.addSeries (clj->js option))))
 
                    ;and set data to series
@@ -672,9 +657,7 @@
 
         _ (cell= (when soil-moistures
                    (some-> chart-id
-                           util/by-id
-                           js/jQuery
-                           .highcharts
+                           util/get-chart
                            (.get ,,, (str x-axis-id))
                            (#(do
                               (.removePlotLine % (str plot-line-id))

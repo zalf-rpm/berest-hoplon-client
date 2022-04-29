@@ -1,12 +1,13 @@
 (ns ui.weather-stations
+  (:require-macros [javelin.core :as jm :refer [loop-tpl]]
+                   [hoplon.core :as hm :refer [with-timeout]])
   (:require [javelin.core :as j :refer [cell cell=]]
             [hoplon.core :as h :refer [textarea fieldset legend table tr th thead tbody td select option img a ul li strong img div button input text span p h3 nav]]
             [de.zalf.berest.client.hoplon.util :as util]
             [de.zalf.berest.client.hoplon.state :as s]
             [ui.elements :as uie]
             [ui.components :as uic]
-            [util.bootstrap :as bs]
-            #_[hoplon.twitter.bootstrap :as bs]
+            [hoplon.twitter.bootstrap :as bs]
             [cljsjs.highcharts]
             [cljs-time.core :as cstc]
             [cljs-time.format :as cstf]
@@ -385,13 +386,7 @@
                                          flatten))
 
                    set-series-data (fn [series-index data]
-                                       (some-> "weather-data-chart" #_chart-id
-                                               util/by-id
-                                               js/jQuery
-                                               .highcharts
-                                               .-series
-                                               (#(nth % series-index),,,)
-                                               (.setData (clj->js data))))
+                                      (util/apply-fn-to-series "weather-data-chart" series-index #(.setData % (clj->js data))))
 
                    create-ordered-curve-data (fn [data key & {:keys [f] :or {f identity}}]
                                                  (->> data

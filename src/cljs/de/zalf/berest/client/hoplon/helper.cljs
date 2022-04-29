@@ -39,3 +39,5 @@
 (defn quote-regex
   [regex]
   (.replace regex (js/RegExp "([()[{*+.$^\\|?])" "g") "\\$1"))
+
+

@@ -1,15 +1,12 @@
 (ns ui.elements
-  (:require
-    [javelin.core :as j :refer [cell cell=]]
-    [hoplon.core :as h :refer [select option a li ul label div button input text span p h3]]
-    [cljs-time.core :as cstc]
-    [cljs-time.format :as cstf]
-    [cljs-time.coerce :as cstcoe]
-    [util.bootstrap :as bs]
-    #_[hoplon.twitter.bootstrap :as bs]
-    [de.zalf.berest.client.hoplon.util :as util]
-    [de.zalf.berest.client.hoplon.state :as s]))
-
+  (:require [javelin.core :as j :refer [cell cell=]]
+            [hoplon.core :as h :refer [select option a li ul label div button input text span p h3]]
+            [cljs-time.core :as cstc]
+            [cljs-time.format :as cstf]
+            [cljs-time.coerce :as cstcoe]
+            [hoplon.twitter.bootstrap :as bs]
+            [de.zalf.berest.client.hoplon.util :as util]
+            [de.zalf.berest.client.hoplon.state :as s]))
 
 (defn vocab
   "translatable vocabulary for this page"

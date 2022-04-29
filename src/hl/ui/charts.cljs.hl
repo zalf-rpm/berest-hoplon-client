@@ -1,18 +1,14 @@
 (ns ui.charts
   (:require-macros [javelin.core :as jm :refer [loop-tpl]]
                    [hoplon.core :as hm :refer []])
-
   (:require [javelin.core :as j :refer [cell cell=]]
             [hoplon.core :as h :refer [div button input text span p h3]]
-
             [de.zalf.berest.client.hoplon.util :as util]
             [de.zalf.berest.client.hoplon.state :as s]
             [ui.elements :as uie]
             [ui.components :as uic]
-            [util.bootstrap :as bs]
-            #_[hoplon.twitter.bootstrap :as bs]
-            [cljsjs.highcharts]
-            #_[cljs-time.coerce :as cstcoe]))
+            [hoplon.twitter.bootstrap :as bs]
+            [cljsjs.highcharts]))
 
 (defn vocab
   "translatable vocabulary for this page"
@@ -92,19 +88,10 @@
            }
           [element (or lang :lang/de)] "UNKNOWN element"))
 
-(defn apply-fn-to-series
-  [chart-div-id series-index f]
-  (some-> chart-div-id
-          util/by-id
-          js/jQuery
-          .highcharts
-          .-series
-          (#(nth % series-index) ,,,)
-          f))
 
 (defn set-series-data
   [chart-div-id series-index data]
-  (apply-fn-to-series chart-div-id series-index #(.setData % (clj->js data))))
+  (util/apply-fn-to-series chart-div-id series-index #(.setData % (clj->js data))))
 
 
 (defn crop-curves-chart-config

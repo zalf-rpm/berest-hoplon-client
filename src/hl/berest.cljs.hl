@@ -1,21 +1,19 @@
 (page "index.html"
-  (:require
-    [hoplon.core :as hc :refer [html head html-meta link body div]]
-    [de.zalf.berest.client.hoplon.state :as s]
-    [util.bootstrap :as bs]
-    #_[hoplon.twitter.bootstrap :as bs]
-    [ui.components :as uic]
-    [ui.elements :as uie]
-    [ui.bersim :as bersim]
-    [ui.weather-stations :as weather-stations]
-    [ui.crops :as crops]
-    [ui.farms :as farms]
-    [ui.admin :as admin]
-    [clojure.string :as str]))
+  (:require [hoplon.core :as hc :refer [html head html-meta link body div]]
+            [de.zalf.berest.client.hoplon.state :as s]
+            [hoplon.twitter.bootstrap :as bs]
+            [ui.components :as uic]
+            [ui.elements :as uie]
+            [ui.bersim :as bersim]
+            [ui.weather-stations :as weather-stations]
+            [ui.crops :as crops]
+            [ui.farms :as farms]
+            [ui.admin :as admin]
+            [clojure.string :as str]))
 
 (enable-console-print!)
 
-(println "hostname: " (-> js/window .-location .-hostname))
+#_(println "hostname: " (-> js/window .-location .-hostname))
 
 (defc edn-result nil)
 #_(cell= (println "edn-result: " edn-result))

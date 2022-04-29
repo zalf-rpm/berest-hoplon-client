@@ -3,8 +3,7 @@
             [hoplon.core :as h :refer [select option fieldset hr a textarea legend div button input text span p h3]]
             [de.zalf.berest.client.hoplon.util :as util]
             [ui.elements :as uie]
-            [util.bootstrap :as bs]
-            #_[hoplon.twitter.bootstrap :as bs]
+            [hoplon.twitter.bootstrap :as bs]
             [de.zalf.berest.client.hoplon.state :as s]))
 
 (defn vocab

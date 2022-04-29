@@ -13,7 +13,7 @@
   (let [factor (.pow js/Math 10 digits)]
     (-> value
         (* ,,, factor)
-        (#(.round js/Math %) ,,,)
+        (#(.round js/Math %))
         (/ ,,, factor))))
 
 (defn js-date-time->date-str [date]
@@ -62,9 +62,9 @@
 
 (def indexed (partial map-indexed vector))
 #_(defn indexed [col]
-  (->> col
-       (interleave (range) ,,,)
-       (partition 2 ,,,)))
+    (->> col
+         (interleave (range))
+         (partition 2)))
 
 (defn val-event [event]
   (-> event .-target .-value))
@@ -74,3 +74,21 @@
 (defn by-id [id] (.getElementById js/document (name id)))
 
 (defn val-id [id] (hc/do! (by-id id) :value))
+
+
+(defn get-chart [chart-id]
+  (let [win js/window
+        hc (.-Highcharts win)
+        charts (.-charts hc)
+        check-id (fn [c] (do (println "chart-id: " chart-id " -> " (= (str (.-id (.-renderTo c))) (str chart-id)) " -> " (-> c .-renderTo .-id (= ,,, chart-id))) (-> c .-renderTo .-id str (= ,,, (str chart-id)))))
+        chart' (filter check-id charts) #_(.filter charts check-id)
+        _ (println "charts: " charts " chart-id: " chart-id " chart': " chart')]
+    (when (and chart' (seq chart'))
+      (first chart'))))
+
+(defn apply-fn-to-series [chart-id series-index f]
+  (when-let [chart (get-chart chart-id)]
+    (let [series (.-series chart)]
+      (when (> (count series) series-index)
+        (let [curve (aget chart series-index)]
+          (f curve))))))

@@ -1,21 +1,18 @@
 (ns ui.admin
   (:require-macros [javelin.core :as jm :refer [loop-tpl]]
                    [hoplon.core :as hm :refer []])
-
   (:require [javelin.core :as j :refer [cell cell=]]
             [hoplon.core :as h :refer [div button input text span p h3 hr label]]
-
             [clojure.string :as cs]
             [de.zalf.berest.client.hoplon.util :as util]
             [de.zalf.berest.client.hoplon.state :as s]
             [ui.user :as user]
             [ui.elements :as uie]
-            [util.bootstrap :as bs]
-            #_[hoplon.twitter.bootstrap :as bs]
+            [util.bootstrap :as ubs]
+            [hoplon.twitter.bootstrap :as bs]
             [cljs-time.core :as cstc]
             [cljs-time.format :as cstf]
             [cljs-time.coerce :as cstcoe]))
-
 
 (defn vocab
   "translatable vocabulary for this page"
@@ -156,7 +153,7 @@
         (hr)
 
         (div
-          (bs/form-inline
+          (ubs/form-inline
 
             (bs/form-group
               (label :class "sr-only" :for new-user-id-field-id (text "~(vocab :new-user-id-field-label s/lang)"))
@@ -257,7 +254,7 @@
         (hr)
 
         (div
-          (bs/form-inline
+          (ubs/form-inline
 
             (bs/form-group
               :col {:xs 2}
@@ -300,7 +297,7 @@
         (hr)
 
         (div
-          (bs/form-inline
+          (ubs/form-inline
 
             (bs/form-group
               :col {:xs 2}
