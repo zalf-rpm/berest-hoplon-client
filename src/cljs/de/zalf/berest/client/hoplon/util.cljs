@@ -80,9 +80,10 @@
   (let [win js/window
         hc (.-Highcharts win)
         charts (.-charts hc)
-        check-id (fn [c] (do (println "chart-id: " chart-id " -> " (= (str (.-id (.-renderTo c))) (str chart-id)) " -> " (-> c .-renderTo .-id (= ,,, chart-id))) (-> c .-renderTo .-id str (= ,,, (str chart-id)))))
+        check-id (fn [c] (-> c .-renderTo .-id str (= ,,, (str chart-id))) #_(do (println "chart-id: " chart-id " -> " (= (str (.-id (.-renderTo c))) (str chart-id)) " -> " (-> c .-renderTo .-id (= ,,, chart-id))) (-> c .-renderTo .-id str (= ,,, (str chart-id)))))
         chart' (filter check-id charts) #_(.filter charts check-id)
-        _ (println "charts: " charts " chart-id: " chart-id " chart': " chart')]
+        ;_ (println "charts: " charts " chart-id: " chart-id " chart': " chart')
+        ]
     (when (and chart' (seq chart'))
       (first chart'))))
 
@@ -90,5 +91,5 @@
   (when-let [chart (get-chart chart-id)]
     (let [series (.-series chart)]
       (when (> (count series) series-index)
-        (let [curve (aget chart series-index)]
+        (let [curve (aget series series-index)]
           (f curve))))))
