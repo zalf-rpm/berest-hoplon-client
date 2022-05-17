@@ -253,7 +253,7 @@
 
         (bs/form-horizontal
           :id "login"
-          :submit #(when (and @user @pwd)
+          :submit #(when @user #_(and @user @pwd)
                     (s/login! @user @pwd)
                     (s/set-route "#/farms")
                     (reset! user nil)
