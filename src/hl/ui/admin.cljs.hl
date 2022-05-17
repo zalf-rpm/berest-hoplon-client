@@ -251,9 +251,9 @@
                             :value-cols 3})
                    ))))
 
-        (hr)
+        #_(hr)
 
-        (div
+        #_(div
           (ubs/form-inline
 
             (bs/form-group
@@ -294,9 +294,9 @@
               :click #(s/set-climate-data-import-time @new-hour @new-min)
               (text "~(vocab :set-climate-data-import-time-button s/lang)"))))
 
-        (hr)
+        #_(hr)
 
-        (div
+        #_(div
           (ubs/form-inline
 
             (bs/form-group

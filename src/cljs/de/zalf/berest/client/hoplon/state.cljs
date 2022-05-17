@@ -6,12 +6,7 @@
 
 #_(enable-console-print!)
 
-(def server-url #_(condp = (-> js/window .-location .-hostname)
-                  "" "http://localhost:3000/"
-                  "localhost" "http://localhost:3000/"
-                  "http://irrigama-web.elasticbeanstalk.com/")
-  "http://localhost:3000/"
-  #_"http://irrigama-web.elasticbeanstalk.com/")
+(def server-url "http://beregnung-web.zalf.de:3000/" #_"http://localhost:3000/")
 #_(println "server-url: " server-url)
 
 (enable-console-print!)
@@ -259,12 +254,12 @@
 (def create-new-com-con (c/mkremote 'de.zalf.berest.web.castra.api/create-new-com-con state error loading))
 
 ;admin
-(def set-climate-data-import-time
+#_(def set-climate-data-import-time
   (c/mkremote 'de.zalf.berest.web.castra.api/set-climate-data-import-time
             climate-data-import-time-update-success?
             error loading))
 
-(def bulk-import-dwd-data-into-datomic
+#_(def bulk-import-dwd-data-into-datomic
   (c/mkremote 'de.zalf.berest.web.castra.api/bulk-import-dwd-data-into-datomic
             climate-data-import-success?
             error loading))
